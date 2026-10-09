@@ -34,8 +34,9 @@ button{font-family:inherit}
 /* ---------- Device + client frame ---------- */
 #bg{position:absolute;inset:0;width:436px;height:905px;max-width:none;pointer-events:none}
 #screen{position:absolute;left:23.5px;top:32px;width:390px;height:844px;border-radius:50px;overflow:hidden}
-#game{position:absolute;inset:0;z-index:1}
-#confetti{position:absolute;inset:0;width:390px;height:844px;z-index:2;pointer-events:none}
+#game{position:absolute;left:0;top:0;width:390px;height:844px;z-index:1}
+#safe{transform-origin:50% 0}
+#confetti{position:absolute;left:0;top:0;width:390px;height:844px;z-index:2;pointer-events:none}
 #frame{position:absolute;inset:0;width:390px;height:844px;max-width:none;z-index:3;pointer-events:none}
 #recHit{position:absolute;z-index:4;border:0;padding:0;border-radius:50%;background:transparent;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 #recHit:focus-visible{outline:2px dashed var(--gold);outline-offset:2px}
@@ -46,12 +47,16 @@ button{font-family:inherit}
 @keyframes flash{0%{opacity:0}20%{opacity:1}100%{opacity:0}}
 /* ---------- Phone mode: no mockup bezel / fake status bar; just the TikTok screen, full-bleed ---------- */
 html.phone, html.phone body, html.phone #viewport{background:#000}
-html.phone #stage{width:390px;height:804px;overflow:hidden}
+/* stage/screen height is set in JS to fill the browser viewport exactly */
+html.phone #stage{width:390px;overflow:hidden}
 html.phone #bg{display:none}
-#cam{display:none;position:absolute;inset:0;width:390px;height:844px;max-width:none;pointer-events:none}
-html.phone #cam{display:block}    /* camera photo cropped from the mockup, no bezel */
-html.phone #screen{left:0;top:-40px;border-radius:0}
-html.phone #devBtn{left:10px;top:6px;background:rgba(0,0,0,.35)}
+#cam{display:none;position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:cover;object-position:50% 38%;pointer-events:none}
+html.phone #cam{display:block}    /* camera photo only (no bezel / status bar), cover-fit */
+html.phone #screen{left:0;top:0;border-radius:0}
+html.phone #devBtn{left:6px;top:4px;width:22px;height:22px;background:rgba(0,0,0,.35);opacity:.75}
+/* the client frame is drawn in two pieces: top UI pinned to the top edge, bottom UI pinned to the bottom edge */
+.framePiece{position:absolute;left:0;width:390px;overflow:hidden;z-index:3;pointer-events:none}
+.framePiece img{position:absolute;left:0;width:390px;height:844px;max-width:none}
 /* dev settings button: in the status bar, left of the clock (outside the game area) */
 #devBtn{position:absolute;left:38px;top:48px;width:26px;height:26px;z-index:6;border:0;padding:0;border-radius:50%;background:rgba(255,255,255,.14);display:grid;place-items:center;cursor:pointer}
 #devBtn:focus-visible{outline:2px solid var(--gold)}
@@ -260,7 +265,7 @@ html.phone #devBtn{left:10px;top:6px;background:rgba(0,0,0,.35)}
 <div id="stage">
   <img id="bg" src="assets/background.png" alt="">
   <div id="screen">
-    <img id="cam" src="assets/camera.jpg" alt="">
+    <img id="cam" src="assets/camera-photo.jpg" alt="">
     <div id="game">
       <div id="flash"></div>
       <div id="safe">
@@ -283,7 +288,8 @@ html.phone #devBtn{left:10px;top:6px;background:rgba(0,0,0,.35)}
       </div>
     </div>
     <canvas id="confetti" width="390" height="844"></canvas>
-    <img id="frame" src="assets/frame-recording.png" alt="">
+    <div id="frameTop" class="framePiece"><img src="assets/frame-recording.png" alt=""></div>
+    <div id="frameBot" class="framePiece"><img src="assets/frame-recording.png" alt=""></div>
     <button id="recHit" aria-label="Start game"></button>
 
     <div id="dev" hidden>
@@ -413,7 +419,7 @@ const $ = id => document.getElementById(id);
 const stage=$('stage'), viewport=$('viewport'), safe=$('safe'), grid=$('grid'), timerEl=$('timer'),
       scorePill=$('scorePill'), comboTag=$('comboTag'), countEl=$('count'), toastsEl=$('toasts'), instruction=$('instruction'),
       resultsEl=$('results'), chipsEl=$('chips'), banner=$('banner'), bonusLine=$('bonusLine'), flashEl=$('flash'),
-      recBtn=$('recHit'), frameImg=$('frame');
+      recBtn=$('recHit'), frameImgs=[...document.querySelectorAll('.framePiece img')];
 // the record ring, clock and stop hint are drawn by the client frame now; keep inert stand-ins so game logic is unchanged
 const RING=0, recProg={style:{}}, recClock={textContent:''}, recHint={hidden:true};
 
@@ -429,11 +435,36 @@ function pick(arr,n){ return shuffle(arr.slice()).slice(0,n); }
 function fmt(ms){ const s=Math.max(0,Math.floor(ms/1000)); return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
 function restart(el,cls){ el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
 
+/* Layout. Mockup: full 436×905 device. Phone: the screen fills the browser viewport edge to edge.
+   T = px of the frame's status-bar area cropped off the top; shift = how far the bottom UI moves up;
+   f = scale of the game safe zone so it still sits between the top and bottom UI. */
+const SPLIT=450, FRAME_BOTTOM=820, SAFE_TOP=108, SAFE_H=477, PHONE_MIN_H=600;
+let L={T:0, shift:0, f:1, H:844};
 function fit(){
   const phone=document.documentElement.classList.contains('phone');
-  const W=phone?390:436, H=phone?804:905;
-  const s=Math.min(viewport.clientWidth/W, viewport.clientHeight/H);
+  const vw=viewport.clientWidth, vh=viewport.clientHeight, screenEl=$('screen');
+  let s;
+  if(!phone){
+    s=Math.min(vw/436, vh/905);
+    L={T:0, shift:0, f:1, H:844};
+    stage.style.height=''; screenEl.style.height='';
+  } else {
+    s=vw/390; let H=vh/s;
+    if(H<PHONE_MIN_H){ H=PHONE_MIN_H; s=vh/H; }
+    if(H>844){ H=844; s=Math.min(vw/390, vh/844); }
+    const T=Math.min(52, 844-H);
+    const shift=Math.max(0, (FRAME_BOTTOM-T)-H);
+    L={T, shift, f:Math.min(1,(SAFE_H-shift)/SAFE_H), H};
+    stage.style.height=H+'px'; screenEl.style.height=H+'px';
+  }
   S.scale=s; stage.style.transform=`translate(-50%,-50%) scale(${s})`;
+  $('game').style.top=(-L.T)+'px';
+  $('confetti').style.top=(-L.T)+'px';
+  safe.style.transform = L.f<1 ? `scale(${L.f})` : '';
+  const ft=$('frameTop'), fb=$('frameBot');
+  ft.style.top='0px'; ft.style.height=(SPLIT-L.T)+'px'; ft.firstElementChild.style.top=(-L.T)+'px';
+  fb.style.top=(SPLIT-L.T-L.shift)+'px'; fb.style.height=(844-SPLIT)+'px'; fb.firstElementChild.style.top=(-SPLIT)+'px';
+  if(typeof placeRec==='function') placeRec();
 }
 addEventListener('resize', fit);
 
@@ -786,12 +817,17 @@ resetBtn.addEventListener('click', e=>{ if(e.detail===0) onReset(); });
 /* ---------- test panel ---------- */
 const dev=$('dev'), devPresets=$('devPresets'), devSafe=$('devSafe'), devCfg=$('devCfg'), devFrames=$('devFrames'), devHit=$('devHit');
 let frameKey=DEFAULT_FRAME;
+function placeRec(){
+  const f=FRAMES[frameKey]; recBtn.hidden=!f || !f.rec;
+  if(!f || !f.rec) return;
+  const y = f.rec.y > SPLIT ? f.rec.y - L.T - L.shift : f.rec.y - L.T;   // follows the frame piece it sits in
+  Object.assign(recBtn.style,{left:(f.rec.x-f.rec.r)+'px', top:(y-f.rec.r)+'px', width:2*f.rec.r+'px', height:2*f.rec.r+'px'});
+}
 function applyFrame(key, remember=true){
   frameKey = FRAMES[key] ? key : DEFAULT_FRAME;
   const f=FRAMES[frameKey];
-  frameImg.src=f.src;
-  recBtn.hidden=!f.rec;
-  if(f.rec) Object.assign(recBtn.style,{left:(f.rec.x-f.rec.r)+'px', top:(f.rec.y-f.rec.r)+'px', width:2*f.rec.r+'px', height:2*f.rec.r+'px'});
+  frameImgs.forEach(im=>im.src=f.src);
+  placeRec();
   if(remember && frameKey!=='paused'){ try{ localStorage.setItem('v5.frame', frameKey); }catch(e){} }
   const fr=document.getElementById('frame-'+frameKey); if(fr) fr.checked=true;
 }
