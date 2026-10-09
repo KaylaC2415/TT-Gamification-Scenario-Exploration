@@ -44,6 +44,14 @@ button{font-family:inherit}
 #flash.bad{background:radial-gradient(circle at 50% 45%,rgba(60,20,90,0) 30%,rgba(60,20,90,.75) 100%);animation:flash 520ms ease-out}
 #flash.rare{background:radial-gradient(circle at 50% 45%,rgba(255,220,80,.45) 0%,rgba(255,220,80,0) 70%);animation:flash 700ms ease-out}
 @keyframes flash{0%{opacity:0}20%{opacity:1}100%{opacity:0}}
+/* ---------- Phone mode: no mockup bezel / fake status bar; just the TikTok screen, full-bleed ---------- */
+html.phone, html.phone body, html.phone #viewport{background:#000}
+html.phone #stage{width:390px;height:804px;overflow:hidden}
+html.phone #bg{display:none}
+#cam{display:none;position:absolute;inset:0;width:390px;height:844px;max-width:none;pointer-events:none}
+html.phone #cam{display:block}    /* camera photo cropped from the mockup, no bezel */
+html.phone #screen{left:0;top:-40px;border-radius:0}
+html.phone #devBtn{left:10px;top:6px;background:rgba(0,0,0,.35)}
 /* dev settings button: in the status bar, left of the clock (outside the game area) */
 #devBtn{position:absolute;left:38px;top:48px;width:26px;height:26px;z-index:6;border:0;padding:0;border-radius:50%;background:rgba(255,255,255,.14);display:grid;place-items:center;cursor:pointer}
 #devBtn:focus-visible{outline:2px solid var(--gold)}
@@ -252,6 +260,7 @@ button{font-family:inherit}
 <div id="stage">
   <img id="bg" src="assets/background.png" alt="">
   <div id="screen">
+    <img id="cam" src="assets/camera.jpg" alt="">
     <div id="game">
       <div id="flash"></div>
       <div id="safe">
@@ -392,6 +401,13 @@ const SKINS = {
 };
 const DEFAULT_SKIN = 'y2k';
 
+/* URL options (for sharing): ?skin=y2k|sticker|deco|basic  &frame=recording|camera|effects|feed  &view=phone|mockup */
+const QS = new URLSearchParams(location.search);
+// phone view on touch phones, or any tall narrow window (portrait aspect narrower than the mockup)
+const isPhone = (matchMedia('(pointer: coarse)').matches && Math.min(screen.width,screen.height) < 700) || /iPhone|iPod|Android.+Mobile/.test(navigator.userAgent) || (innerWidth/innerHeight < 0.6);
+const VIEW = QS.get('view') || (isPhone ? 'phone' : 'mockup');
+if(VIEW==='phone') document.documentElement.classList.add('phone');
+
 /* ========================================================= */
 const $ = id => document.getElementById(id);
 const stage=$('stage'), viewport=$('viewport'), safe=$('safe'), grid=$('grid'), timerEl=$('timer'),
@@ -414,7 +430,9 @@ function fmt(ms){ const s=Math.max(0,Math.floor(ms/1000)); return String(Math.fl
 function restart(el,cls){ el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
 
 function fit(){
-  const s=Math.min(viewport.clientWidth/436, viewport.clientHeight/905);
+  const phone=document.documentElement.classList.contains('phone');
+  const W=phone?390:436, H=phone?804:905;
+  const s=Math.min(viewport.clientWidth/W, viewport.clientHeight/H);
   S.scale=s; stage.style.transform=`translate(-50%,-50%) scale(${s})`;
 }
 addEventListener('resize', fit);
@@ -742,7 +760,9 @@ function drawConfetti(now){
 function stopConfetti(){ cancelAnimationFrame(conf.raf); conf.parts=[]; cx.clearRect(0,0,cv.width,cv.height); }
 
 /* ---------- inputs ---------- */
+let lastRec=0;
 function onRec(){
+  const now=performance.now(); if(now-lastRec<350) return; lastRec=now;
   const live = frameKey==='recording' || frameKey==='paused';
   if(!live){ // other frames: record button is just start / stop
     if(S.phase==='idle'||S.phase==='result') start();
@@ -759,7 +779,7 @@ recBtn.addEventListener('click', e=>{ if(e.detail===0) onRec(); });
 $('safe').addEventListener('pointerdown', e=>{ if(S.phase==='idle'){ e.preventDefault(); start(); } });
 addEventListener('keydown', e=>{ if(e.code==='Space' && dev.hidden){ e.preventDefault(); onRec(); } });
 const resetBtn=$('resetBtn');
-function onReset(){ if(frameKey==='paused') applyFrame('recording',false); start(); }
+function onReset(){ const now=performance.now(); if(now-lastRec<350) return; lastRec=now; if(frameKey==='paused') applyFrame('recording',false); start(); }
 resetBtn.addEventListener('pointerdown', e=>{ e.preventDefault(); onReset(); });
 resetBtn.addEventListener('click', e=>{ if(e.detail===0) onReset(); });
 
@@ -835,8 +855,8 @@ devSafe.addEventListener('change', ()=>safe.classList.toggle('debug', devSafe.ch
 applyPreset((location.hash||'').slice(1));
 let savedFrame=null, savedSkin=null;
 try{ savedFrame=localStorage.getItem('v5.frame'); savedSkin=localStorage.getItem('v5.skin'); }catch(e){}
-applyFrame(savedFrame||DEFAULT_FRAME, false);
-applySkin(savedSkin||DEFAULT_SKIN, false);
+applyFrame(QS.get('frame')||savedFrame||DEFAULT_FRAME, false);
+applySkin(QS.get('skin')||savedSkin||DEFAULT_SKIN, false);
 fit(); showIdle(); requestAnimationFrame(loop);
 window.__game={S, get cfg(){return cfg}, start, endGame};
 </script>
