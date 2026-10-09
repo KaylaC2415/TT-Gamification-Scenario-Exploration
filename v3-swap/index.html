@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#000000">
+<title>What's your 2027 like? V3 Swap</title>
+<style>
+/* Layout: fixed 390×844 TikTok camera stage, scaled to fill screen height; all game UI lives inside the 284×477 safe zone. Single dark theme by design. */
+:root{
+  --black:#000; --ink:#111; --white:#fff;
+  --tt-red:#fe2c55;
+  --frame-pink:rgba(247,170,192,.62);
+  --frame-deep:#d9345c;
+  --card-back:#26262b; --card-face:#f5f2f3;
+  --bad-face:#3b2c49; --bad-glow:#9b6bff; --bad-chip:rgba(70,24,90,.85);
+  --rare-1:#fff1a8; --rare-2:#ffc93a;
+  --good:#22d47e; --bad:#ff4d4f; --gold:#ffd83a;
+  --flip:140ms; --gone:220ms;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--black);overflow:hidden}
+body{font-family:var(--font);color:var(--white);-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+#viewport{position:fixed;inset:0;overflow:hidden;background:var(--black)}
+#stage{position:absolute;left:50%;top:50%;width:390px;height:844px;transform:translate(-50%,-50%);transform-origin:center;background:var(--black);overflow:hidden;touch-action:none}
+button{font-family:inherit}
+
+/* ---------- TikTok chrome ---------- */
+.status{position:absolute;top:0;left:0;right:0;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 30px 0 44px;font-weight:600;font-size:17px}
+.status .sys{display:flex;gap:6px;align-items:center}
+.camera{position:absolute;left:0;top:52px;width:390px;height:693px;border-radius:14px;overflow:hidden;background:#b9b3b6}
+.camera svg.feed{position:absolute;inset:0}
+.frame{position:absolute;background:var(--frame-pink);pointer-events:none}
+.frame.top{left:0;right:0;top:0;height:56px}
+.frame.l{left:0;top:56px;width:53px;height:477px}
+.frame.r{right:0;top:56px;width:53px;height:477px}
+.frame.bot{left:0;right:0;top:533px;bottom:0;background:var(--frame-deep)}
+#flash{position:absolute;inset:0;pointer-events:none;opacity:0}
+#flash.bad{background:radial-gradient(circle at 50% 45%,rgba(60,20,90,0) 30%,rgba(60,20,90,.75) 100%);animation:flash 520ms ease-out}
+#flash.rare{background:radial-gradient(circle at 50% 45%,rgba(255,220,80,.45) 0%,rgba(255,220,80,0) 70%);animation:flash 700ms ease-out}
+@keyframes flash{0%{opacity:0}20%{opacity:1}100%{opacity:0}}
+.chrome-btn{position:absolute;display:grid;place-items:center;border:0;background:none;color:var(--white);padding:0;cursor:pointer}
+#devBtn{left:10px;top:68px;width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.25)}
+#devBtn:focus-visible{outline:2px solid var(--gold)}
+.sound{position:absolute;left:50%;top:66px;transform:translateX(-50%);height:40px;padding:0 18px;border-radius:20px;background:rgba(0,0,0,.35);display:flex;align-items:center;gap:6px;font-weight:600;font-size:15px}
+.side-icons{position:absolute;right:14px;top:70px;display:flex;flex-direction:column;gap:22px;opacity:.95}
+.side-icons span{width:30px;height:30px;display:grid;place-items:center}
+.lang{position:absolute;left:14px;top:172px;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.3);display:grid;place-items:center;font-size:15px;font-weight:700}
+#recClock{position:absolute;left:0;right:0;top:584px;text-align:center;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+#recHint{position:absolute;left:0;right:0;top:738px;text-align:center;font-size:12px;font-weight:700;opacity:.85}
+#rec{position:absolute;left:138px;top:620px;width:114px;height:114px;border-radius:50%;border:0;padding:0;background:none;cursor:pointer;touch-action:manipulation}
+#rec svg{position:absolute;inset:0;transform:rotate(-90deg)}
+#rec .track{fill:none;stroke:rgba(255,255,255,.45);stroke-width:12}
+#rec .prog{fill:none;stroke:var(--tt-red);stroke-width:12;stroke-linecap:round;transition:stroke-dashoffset 80ms linear}
+#rec .core{position:absolute;left:50%;top:50%;width:72px;height:72px;margin:-36px 0 0 -36px;border-radius:50%;background:var(--tt-red);transition:all 160ms ease}
+#rec.recording .core{width:36px;height:36px;margin:-18px 0 0 -18px;border-radius:8px}
+#rec.pulse .core{animation:recPulse 1.4s ease-in-out infinite}
+#rec:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+@keyframes recPulse{0%,100%{transform:scale(1)}50%{transform:scale(.88)}}
+.thumb{position:absolute;left:50px;top:650px;width:54px;height:54px;border-radius:12px;background:linear-gradient(135deg,#ffb3c7,#fe2c55);display:grid;place-items:center;font-weight:800;font-size:13px;box-shadow:0 0 0 2px var(--white)}
+.check{position:absolute;left:325px;top:657px;width:40px;height:40px;border-radius:50%;background:var(--tt-red);display:grid;place-items:center}
+
+/* ---------- Safe zone + game UI ---------- */
+#safe{position:absolute;left:53px;top:108px;width:284px;height:477px}
+#safe.debug{outline:1.5px dashed var(--gold)}
+.title{position:absolute;top:6px;left:0;right:0;text-align:center;font-weight:800;font-size:16px;letter-spacing:.01em;text-shadow:0 1px 3px rgba(0,0,0,.55);text-wrap:balance}
+#scorePill{position:absolute;top:32px;left:50%;transform:translateX(-50%);background:var(--white);color:var(--ink);font-weight:800;font-size:15px;padding:3px 12px;border-radius:999px;font-variant-numeric:tabular-nums;white-space:nowrap}
+#scorePill.bump{animation:bump 160ms ease-out}
+@keyframes bump{50%{transform:translateX(-50%) scale(1.15)}}
+#timer{position:absolute;top:32px;right:4px;min-width:28px;height:24px;padding:0 6px;background:var(--white);color:var(--ink);font-weight:800;font-size:15px;display:grid;place-items:center;border-radius:4px;font-variant-numeric:tabular-nums}
+#timer.low{background:var(--bad);color:var(--white);animation:lowPulse 1s ease-in-out infinite}
+@keyframes lowPulse{50%{transform:scale(1.12)}}
+#comboTag{position:absolute;top:32px;left:4px;height:24px;padding:0 8px;border-radius:4px;background:var(--tt-red);color:var(--white);font-weight:900;font-size:13px;display:grid;place-items:center;letter-spacing:.04em}
+#comboTag.bump{animation:comboBump 220ms ease-out}
+@keyframes comboBump{50%{transform:scale(1.25)}}
+
+#grid{position:absolute;left:0;right:0;bottom:4px;display:grid;gap:6px;justify-content:center;align-content:end}
+#grid.idle{pointer-events:none}
+#grid.idle .card{opacity:.88}
+.card{position:relative;border:0;padding:0;background:none;perspective:420px;touch-action:manipulation;cursor:pointer;outline:none}
+.card .inner{position:absolute;inset:0;transform-style:preserve-3d;transition:transform var(--flip) cubic-bezier(.3,.7,.3,1)}
+.card .face{position:absolute;inset:0;border-radius:6px;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:grid;place-items:center}
+.card .back{background:var(--card-back);box-shadow:inset 0 0 0 1px rgba(255,255,255,.07)}
+.card .front{background:var(--card-face);transform:rotateY(180deg);font-size:var(--emoji,30px);line-height:1}
+.card .front.t-bad{background:var(--bad-face)}
+.card .front.t-rare{background:linear-gradient(135deg,var(--rare-1),var(--rare-2));box-shadow:inset 0 0 0 2px rgba(255,255,255,.7)}
+.card.up .inner{transform:rotateY(180deg)}
+.card.match{animation:matchPop 260ms ease-out;z-index:2}
+.card.match .front{box-shadow:0 0 0 3px var(--good),0 0 16px var(--good)}
+.card.match .front.t-rare{box-shadow:0 0 0 3px var(--gold),0 0 22px var(--gold)}
+.card.match .front.t-bad{box-shadow:0 0 0 3px var(--bad-glow),0 0 16px var(--bad-glow)}
+.card.miss{animation:shake 220ms ease-out}
+.card.miss .front{box-shadow:0 0 0 3px var(--bad)}
+.card.gone{transition:transform var(--gone) ease-in,opacity var(--gone) ease-in;transform:scale(.3);opacity:0;pointer-events:none}
+.card.scatter{transition:transform 420ms cubic-bezier(.5,0,.8,.4),opacity 420ms ease-in;opacity:0;pointer-events:none}
+.card:focus-visible .face{outline:2px solid var(--gold)}
+@keyframes matchPop{40%{transform:scale(1.1)}100%{transform:scale(1)}}
+@keyframes shake{25%{transform:translateX(-4px)}50%{transform:translateX(4px)}75%{transform:translateX(-2px)}}
+
+#instruction{position:absolute;left:50%;bottom:112px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px}
+#instruction .pill{background:var(--white);color:var(--ink);font-weight:800;font-size:15px;padding:8px 16px;border-radius:999px;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+#instruction .sub{font-weight:800;font-size:13px;white-space:nowrap;background:rgba(0,0,0,.55);padding:4px 10px;border-radius:999px}
+#count{position:absolute;left:0;right:0;top:78px;text-align:center;pointer-events:none}
+#count .n{display:inline-block;font-size:110px;font-weight:900;line-height:1;color:var(--white);-webkit-text-stroke:5px var(--ink);paint-order:stroke fill;animation:countPop 900ms ease-out both}
+#count .hint{font-weight:800;font-size:14px;text-shadow:0 1px 3px rgba(0,0,0,.6);margin-top:2px}
+@keyframes countPop{0%{transform:scale(1.6);opacity:0}18%{transform:scale(1);opacity:1}80%{opacity:1}100%{opacity:.2;transform:scale(.9)}}
+
+#toasts{position:absolute;left:0;right:0;top:140px;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none}
+.toast{background:var(--white);color:var(--ink);font-weight:900;font-size:17px;padding:6px 14px;border-radius:999px;letter-spacing:.02em;box-shadow:0 4px 14px rgba(0,0,0,.25);animation:toast 900ms ease-out forwards;white-space:nowrap}
+.toast.bad{background:var(--bad-face);color:#e9d8ff;box-shadow:0 0 0 2px var(--bad-glow)}
+.toast.rare{background:linear-gradient(135deg,var(--rare-1),var(--rare-2));font-size:19px;animation-duration:1300ms}
+.toast.combo{background:var(--tt-red);color:var(--white);font-size:14px;padding:4px 12px}
+@keyframes toast{0%{transform:scale(.6);opacity:0}14%{transform:scale(1.1);opacity:1}24%{transform:scale(1)}72%{opacity:1;transform:translateY(-4px)}100%{opacity:0;transform:translateY(-22px)}}
+
+#banner{position:absolute;left:0;right:0;top:62px;text-align:center;font-weight:900;font-size:26px;color:var(--gold);-webkit-text-stroke:4px var(--ink);paint-order:stroke fill;letter-spacing:.02em;animation:bannerIn 420ms cubic-bezier(.2,1.4,.4,1) both}
+#banner.plain{color:var(--white)}
+#bonusLine{position:absolute;left:0;right:0;top:98px;text-align:center;font-weight:800;font-size:13.5px;line-height:1.5;text-shadow:0 1px 3px rgba(0,0,0,.8);font-variant-numeric:tabular-nums}
+@keyframes bannerIn{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
+
+#results{position:absolute;left:0;right:0;top:170px;bottom:6px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:12px}
+#results .label{font-weight:800;font-size:12px;letter-spacing:.14em;text-transform:uppercase;text-shadow:0 1px 3px rgba(0,0,0,.7)}
+#chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 10px;max-width:276px}
+.chip{display:flex;align-items:center;gap:5px;font-weight:900;font-size:15px;letter-spacing:.03em;padding:5px 11px;border-radius:999px;background:rgba(0,0,0,.55);text-shadow:0 1px 2px rgba(0,0,0,.6);animation:chipIn 320ms cubic-bezier(.2,1.4,.4,1) both}
+.chip.bad{background:var(--bad-chip);box-shadow:0 0 0 1.5px var(--bad-glow)}
+.chip.rare{background:linear-gradient(135deg,var(--rare-1),var(--rare-2));color:var(--ink);text-shadow:none}
+.empty{font-weight:700;font-size:15px;text-align:center;max-width:230px;background:rgba(0,0,0,.5);padding:8px 14px;border-radius:12px}
+@keyframes chipIn{0%{transform:scale(.4) translateY(10px);opacity:0}100%{transform:none;opacity:1}}
+#resetBtn{border:0;background:var(--gold);color:var(--ink);font-weight:900;font-size:16px;padding:10px 30px;border-radius:999px;cursor:pointer;touch-action:manipulation;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+#resetBtn:active{transform:scale(.96)}
+#resetBtn:focus-visible{outline:2px solid var(--white);outline-offset:2px}
+
+#confetti{position:absolute;left:0;top:52px;width:390px;height:693px;pointer-events:none}
+
+/* ---------- Test panel ---------- */
+#dev{position:absolute;inset:52px 0 0 0;background:rgba(10,10,12,.95);padding:18px 20px;display:flex;flex-direction:column;gap:12px;font-size:14px;z-index:20;overflow:auto;touch-action:pan-y}
+#dev h2{margin:0;font-size:17px}
+#dev p{margin:0;color:#bbb;font-size:12.5px;line-height:1.4}
+#dev label{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:8px;background:#1d1d22;cursor:pointer}
+#dev .row{display:flex;gap:10px}
+#dev button{flex:1;border:0;border-radius:999px;padding:10px;font-weight:800;font-size:14px;cursor:pointer}
+#devApply{background:var(--tt-red);color:var(--white)}
+#devClose{background:#2c2c33;color:var(--white)}
+#devCfg{font:11.5px/1.45 ui-monospace,Menlo,monospace;color:#cfcfd6;white-space:pre-wrap;background:#16161a;padding:10px;border-radius:8px;margin:0}
+@media (prefers-reduced-motion:reduce){.card .inner{transition-duration:60ms}.toast,.chip,#banner,#count .n,#flash{animation-duration:1ms}}
+</style>
+</head>
+<body>
+<div id="viewport">
+<div id="stage">
+  <div class="status"><span>8:00</span>
+    <span class="sys"><svg width="18" height="12" viewBox="0 0 18 12" fill="#fff"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+    <svg width="26" height="13" viewBox="0 0 26 13"><rect x=".5" y=".5" width="22" height="12" rx="3.5" fill="none" stroke="#fff" opacity=".5"/><rect x="2.5" y="2.5" width="16" height="8" rx="2" fill="#fff"/><rect x="24" y="4.5" width="1.5" height="4" rx=".7" fill="#fff" opacity=".5"/></svg></span>
+  </div>
+
+  <div class="camera">
+    <svg class="feed" viewBox="0 0 390 693" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cfcacc"/><stop offset="1" stop-color="#9c9699"/></linearGradient></defs>
+      <rect width="390" height="693" fill="url(#bg)"/>
+      <path d="M110 230 C110 120 280 120 280 230 L292 480 L98 480 Z" fill="#17151a"/>
+      <rect x="175" y="300" width="40" height="70" fill="#e2bba6"/>
+      <ellipse cx="195" cy="240" rx="60" ry="78" fill="#ecc8b4"/>
+      <path d="M135 210 C140 150 250 150 255 210 C230 175 165 175 135 210Z" fill="#17151a"/>
+      <ellipse cx="172" cy="245" rx="7" ry="4" fill="#2b2124"/><ellipse cx="218" cy="245" rx="7" ry="4" fill="#2b2124"/>
+      <path d="M182 290 Q195 297 208 290" stroke="#b36b6b" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <path d="M40 693 C40 420 120 370 195 370 C270 370 350 420 350 693Z" fill="#1c1b1f"/>
+    </svg>
+    <div class="frame top"></div><div class="frame l"></div><div class="frame r"></div><div class="frame bot"></div>
+    <div id="flash"></div>
+  </div>
+
+  <button id="devBtn" class="chrome-btn" aria-label="Test settings">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+  </button>
+  <div class="sound" aria-hidden="true">♪ Add sound</div>
+  <div class="side-icons" aria-hidden="true">
+    <span><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M4 12a8 8 0 0 1 14-5l2 2M20 12a8 8 0 0 1-14 5l-2-2M20 4v5h-5M4 20v-5h5"/></svg></span>
+    <span><svg width="22" height="26" viewBox="0 0 20 24" fill="#fff"><path d="M12 0 1 14h7l-2 10L18 9h-7z"/></svg></span>
+    <span><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg></span>
+    <span><svg width="26" height="26" viewBox="0 0 24 24" fill="#fff"><path d="m5 19 10-10 2 2-10 10zM15 3l1 2 2 1-2 1-1 2-1-2-2-1 2-1zM20 9l.7 1.3L22 11l-1.3.7L20 13l-.7-1.3L18 11l1.3-.7z"/></svg></span>
+  </div>
+  <div class="lang" aria-hidden="true">文A</div>
+
+  <div id="safe">
+    <div class="title">What's your 2027 like?</div>
+    <div id="comboTag" hidden>x2</div>
+    <div id="scorePill" hidden>Score: 0</div>
+    <div id="timer" hidden>0</div>
+    <div id="banner" hidden></div>
+    <div id="bonusLine" hidden></div>
+    <div id="count" hidden></div>
+    <div id="toasts"></div>
+    <div id="grid" class="idle" aria-label="Memory cards"></div>
+    <div id="instruction"><div class="pill">Tap and match pairs</div><div class="sub" id="instrSub">Collect the good luck · dodge the bad</div></div>
+    <div id="results" hidden>
+      <div class="label">Your 2027</div>
+      <div id="chips"></div>
+      <button id="resetBtn">Reset</button>
+    </div>
+  </div>
+
+  <canvas id="confetti" width="390" height="693"></canvas>
+
+  <div id="recClock">00:00</div>
+  <div class="thumb" aria-hidden="true">2027</div>
+  <button id="rec" class="pulse" aria-label="Start game">
+    <svg viewBox="0 0 114 114"><circle class="track" cx="57" cy="57" r="51"/><circle class="prog" cx="57" cy="57" r="51"/></svg>
+    <span class="core"></span>
+  </button>
+  <div id="recHint" hidden>Tap to stop</div>
+  <div class="check" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg></div>
+
+  <div id="dev" hidden>
+    <h2>Test variants</h2>
+    <p>Pick a variant and restart. You can also link straight to one with a hash, e.g. <b>#quickPreview</b>. Defaults live in CONFIG at the top of the script.</p>
+    <div id="devPresets" style="display:flex;flex-direction:column;gap:6px"></div>
+    <label><input type="checkbox" id="devSafe"> Show TikTok safe zone (284 × 477)</label>
+    <div class="row"><button id="devClose">Close</button><button id="devApply">Apply &amp; restart</button></div>
+    <pre id="devCfg"></pre>
+  </div>
+</div>
+</div>
+
+<script>
+/* =========================================================
+   CONFIG — every tunable lives here
+   ========================================================= */
+const CONFIG = {
+  // board
+  goodPairs: 6,           // good-luck pairs, including the surprise pair (5 regular + 1 surprise)
+  badPairs: 2,            // bad-luck pairs: traps, collecting one adds it to your 2027
+  cols: 4,
+  rareChance: 1,          // chance per game that one good pair is the surprise pair (0–1)
+  swapOnMiss: false,      // after a mismatch, each missed card trades places with a random face-down card
+  swapMs: 280,            // swap slide duration
+
+  // timing
+  previewMs: 0,           // memorize time with faces up (0 = no preview)
+  countdownFrom: 3,       // numbers shown during the preview
+  gameMs: 30000,          // time cap
+  timerMode: 'countup',   // 'countup' | 'countdown'
+  lowTimeSec: 5,          // timer turns red with this many seconds left before the cap
+
+  // scoring  (scoring: 'full' | 'pairs' | 'none')
+  scoring: 'full',
+  goodScoreTotal: 100,    // all good pairs together are worth this (each = total / goodPairs)
+  rareBonus: 30,          // extra for matching the rare pair
+  badPenalty: 20,         // subtracted when a bad pair is matched
+  comboStep: 5,           // combo bonus: +comboStep × (combo − 1) on each chained good match
+  timeBonusPerSec: 3,     // when all good pairs are collected: + (cap − clear time) × this
+  bonusSteps: 24,         // ticks for the bonus count-up
+
+  // feel
+  flipMs: 140,
+  mismatchMs: 350,
+  matchHoldMs: 380,
+  removeMs: 220,
+  bonusTickMs: 70,
+  revealDodgedMs: 650,    // after a clear, how long the dodged bad cards stay face-up
+  timeoutBanner: "TIME'S UP",  // title when the cap is hit
+  celebrateTimeout: false,     // light confetti on timeout (for the "can't collect everything" design)
+};
+
+const GOOD = [
+  {id:'love', emoji:'❤️', label:'LOVE'},
+  {id:'money', emoji:'💰', label:'MONEY'},
+  {id:'travel', emoji:'✈️', label:'TRAVEL'},
+  {id:'luck', emoji:'🍀', label:'LUCK'},
+  {id:'career', emoji:'💼', label:'CAREER'},
+  {id:'friend', emoji:'👯', label:'FRIENDSHIP'},
+  {id:'health', emoji:'💪', label:'HEALTH'},
+  {id:'home', emoji:'🏠', label:'HOME'},
+  {id:'pet', emoji:'🐶', label:'PET'},
+  {id:'study', emoji:'🎓', label:'STUDY'},
+];
+const BAD = [
+  {id:'broke', emoji:'💸', label:'BROKE'},
+  {id:'heartbreak', emoji:'💔', label:'HEARTBREAK'},
+  {id:'rain', emoji:'🌧️', label:'BAD LUCK'},
+  {id:'sick', emoji:'🤒', label:'SICK DAYS'},
+  {id:'overtime', emoji:'😵‍💫', label:'BURNOUT'},
+];
+const RARE = [
+  {id:'miracle', emoji:'🦄', label:'MIRACLE'},
+  {id:'jackpot', emoji:'💎', label:'JACKPOT'},
+  {id:'dream', emoji:'🌈', label:'DREAM COME TRUE'},
+];
+
+const TIMED15 = {gameMs:15000, timerMode:'countdown', lowTimeSec:5, timeoutBanner:'2027 REVEALED', celebrateTimeout:true};
+const PRESETS = {
+  default:      {label:'V3 base (30s count-up, 2 bad + 1 surprise)', o:{}},
+  timed15:      {label:'15s countdown: collect what you can', o:TIMED15},
+  swap:         {label:'Swap on miss (30s)', o:{swapOnMiss:true}},
+  timed15swap:  {label:'15s + swap on miss', o:{...TIMED15, swapOnMiss:true}},
+  quickPreview: {label:'1.5s quick preview + 20s cap', o:{previewMs:1500, countdownFrom:1, gameMs:20000}},
+  pairsOnly:    {label:'Score = pairs only', o:{scoring:'pairs'}},
+  noScore:      {label:'No score', o:{scoring:'none'}},
+};
+
+/* ========================================================= */
+const $ = id => document.getElementById(id);
+const stage=$('stage'), viewport=$('viewport'), safe=$('safe'), grid=$('grid'), timerEl=$('timer'),
+      scorePill=$('scorePill'), comboTag=$('comboTag'), countEl=$('count'), toastsEl=$('toasts'), instruction=$('instruction'),
+      resultsEl=$('results'), chipsEl=$('chips'), banner=$('banner'), bonusLine=$('bonusLine'), flashEl=$('flash'),
+      recBtn=$('rec'), recProg=recBtn.querySelector('.prog'), recClock=$('recClock'), recHint=$('recHint');
+const RING = 2*Math.PI*51;
+recProg.style.strokeDasharray = RING; recProg.style.strokeDashoffset = RING;
+
+let presetKey='default', cfg={...CONFIG};
+const S = { phase:'idle', cards:[], els:[], open:-1, collected:[], goodLeft:0, combo:0, bestCombo:0,
+            pts:{pairs:0, rare:0, combo:0, bad:0, speed:0}, dodged:[], t0:0, recT0:0, shownSec:null, timers:new Set(), scale:1 };
+
+function later(fn, ms){ const id=setTimeout(()=>{ S.timers.delete(id); fn(); }, ms); S.timers.add(id); return id; }
+function clearLater(){ S.timers.forEach(clearTimeout); S.timers.clear(); }
+function buzz(p){ try{ navigator.vibrate && navigator.vibrate(p); }catch(e){} }
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.random()*(i+1)|0; [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function pick(arr,n){ return shuffle(arr.slice()).slice(0,n); }
+function fmt(ms){ const s=Math.max(0,Math.floor(ms/1000)); return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
+function restart(el,cls){ el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+
+function fit(){
+  const s=Math.min(viewport.clientWidth/390, viewport.clientHeight/844);
+  S.scale=s; stage.style.transform=`translate(-50%,-50%) scale(${s})`;
+}
+addEventListener('resize', fit);
+
+/* ---------- board ---------- */
+function buildDeck(){
+  const hasRare = Math.random() < cfg.rareChance;
+  const good = pick(GOOD, cfg.goodPairs - (hasRare?1:0)).map(k=>({...k,type:'good'}));
+  if(hasRare) good.push({...pick(RARE,1)[0], type:'rare'});
+  const bad = pick(BAD, cfg.badPairs).map(k=>({...k,type:'bad'}));
+  const kinds = [...good, ...bad];
+  S.goodLeft = good.length;
+  S.cards = shuffle(kinds.flatMap(k=>[{kind:k,status:'down'},{kind:k,status:'down'}]));
+}
+const CLS={down:'', up:'up', miss:'up miss', match:'up match', gone:'up gone'};
+function setCard(i,status){ S.cards[i].status=status; S.els[i].className='card '+CLS[status]; }
+function paintFace(i){ const f=S.els[i].querySelector('.front'), k=S.cards[i].kind; f.className='face front t-'+k.type; f.textContent=k.emoji; }
+
+/* swap card i with a random face-down card; the two tiles slide past each other so a sharp player can follow */
+function swapAway(i){
+  if(S.phase!=='playing' || S.cards[i].status!=='down' || i===S.open) return;
+  const pool=S.cards.map((c,x)=>x).filter(x=>x!==i && x!==S.open && S.cards[x].status==='down');
+  if(!pool.length) return;
+  const x=pool[Math.random()*pool.length|0];
+  [S.cards[i],S.cards[x]]=[S.cards[x],S.cards[i]];
+  paintFace(i); paintFace(x);
+  const a=S.els[i], b=S.els[x];
+  const dx=b.offsetLeft-a.offsetLeft, dy=b.offsetTop-a.offsetTop;
+  [[a,dx,dy],[b,-dx,-dy]].forEach(([el,ox,oy])=>{
+    el.style.transition='none'; el.style.zIndex=3; el.style.transform=`translate(${ox}px,${oy}px)`;
+  });
+  void a.offsetWidth;
+  [a,b].forEach(el=>{ el.style.transition=`transform ${cfg.swapMs}ms cubic-bezier(.4,0,.2,1)`; el.style.transform=''; });
+  later(()=>[a,b].forEach(el=>{ el.style.transition=''; el.style.zIndex=''; }), cfg.swapMs+20);
+}
+
+function renderGrid(){
+  const W=284, GAP=6, MAXH=262, cols=cfg.cols, rows=Math.ceil(S.cards.length/cols);
+  const cw=(W-(cols-1)*GAP)/cols;
+  let ch=cw/1.18;
+  if(rows*ch+(rows-1)*GAP>MAXH) ch=(MAXH-(rows-1)*GAP)/rows;
+  grid.style.gridTemplateColumns=`repeat(${cols}, ${cw}px)`;
+  grid.style.gridAutoRows=`${ch}px`;
+  grid.style.setProperty('--emoji', Math.round(Math.min(cw,ch)*0.5)+'px');
+  const frag=document.createDocumentFragment();
+  S.els=S.cards.map((c,i)=>{
+    const b=document.createElement('button');
+    b.className='card'; b.setAttribute('aria-label','Card '+(i+1));
+    b.innerHTML=`<div class="inner"><div class="face back"></div><div class="face front t-${c.kind.type}">${c.kind.emoji}</div></div>`;
+    b.addEventListener('pointerdown', e=>{ e.preventDefault(); onTap(i); });
+    b.addEventListener('click', e=>{ if(e.detail===0) onTap(i); });
+    frag.appendChild(b); return b;
+  });
+  grid.replaceChildren(frag);
+}
+
+/* ---------- flow ---------- */
+function resetAll(){
+  clearLater(); stopConfetti();
+  S.open=-1; S.collected=[]; S.dodged=[]; S.combo=0; S.bestCombo=0; S.shownSec=null;
+  S.pts={pairs:0, rare:0, combo:0, bad:0, speed:0};
+  toastsEl.replaceChildren(); flashEl.className='';
+  resultsEl.hidden=true; banner.hidden=true; bonusLine.hidden=true; countEl.hidden=true;
+  scorePill.hidden=true; comboTag.hidden=true; recHint.hidden=true;
+  timerEl.hidden=true; timerEl.classList.remove('low');
+  recProg.style.strokeDashoffset=RING;
+}
+
+function showIdle(){
+  resetAll(); S.phase='idle';
+  buildDeck(); renderGrid();
+  grid.classList.add('idle'); grid.hidden=false; instruction.hidden=false;
+  $('instrSub').hidden = cfg.badPairs===0;
+  $('instrSub').textContent = cfg.swapOnMiss ? 'Dodge the bad · wrong picks move!' : 'Collect the good luck · dodge the bad';
+  recBtn.className='pulse'; recBtn.setAttribute('aria-label','Start game');
+  recClock.textContent='00:00';
+}
+
+function start(){
+  resetAll();
+  S.phase='preview';
+  buildDeck(); renderGrid();
+  grid.classList.remove('idle'); grid.hidden=false; instruction.hidden=true;
+  recBtn.className='recording'; recBtn.setAttribute('aria-label','Stop game');
+  S.recT0=performance.now();
+  timerEl.hidden=false;
+  timerEl.textContent = cfg.timerMode==='countdown' ? Math.round(cfg.gameMs/1000) : 0;
+  if(cfg.previewMs>0){
+    void grid.offsetWidth;
+    S.cards.forEach((_,i)=>setCard(i,'up'));
+    const n=Math.max(1,cfg.countdownFrom), step=cfg.previewMs/n;
+    for(let k=0;k<n;k++) later(()=>showCount(n-k), k*step);
+    later(()=>{ countEl.hidden=true; beginPlay(); }, cfg.previewMs);
+  } else beginPlay();
+}
+function showCount(n){ countEl.hidden=false; countEl.innerHTML=`<div class="n">${n}</div><div class="hint">Memorize!</div>`; }
+
+function beginPlay(){
+  S.cards.forEach((_,i)=>setCard(i,'down'));
+  S.open=-1; S.phase='playing'; S.t0=performance.now(); S.shownSec=null;
+  recHint.hidden=false;
+}
+
+function onTap(i){
+  if(S.phase!=='playing') return;
+  const c=S.cards[i];
+  if(!c || c.status!=='down') return;
+  setCard(i,'up');
+  if(S.open<0){ S.open=i; return; }
+  const j=S.open; S.open=-1;
+  if(S.cards[j].kind.id===c.kind.id) onMatch(i,j,c.kind);
+  else {
+    setCard(i,'miss'); setCard(j,'miss');
+    setCombo(0);
+    const ki=c, kj=S.cards[j];
+    later(()=>{
+      if(S.cards[i].status==='miss') setCard(i,'down');
+      if(S.cards[j].status==='miss') setCard(j,'down');
+      if(cfg.swapOnMiss) later(()=>{
+        // only move them if they're still the same face-down cards (player may have re-opened one)
+        if(S.cards[i]===ki) swapAway(i);
+        const jj=S.cards.indexOf(kj); if(jj>=0) swapAway(jj);
+      }, cfg.flipMs);
+    }, cfg.mismatchMs);
+  }
+}
+
+function onMatch(i,j,k){
+  setCard(i,'match'); setCard(j,'match');
+  S.collected.push(k);
+  later(()=>{ setCard(i,'gone'); setCard(j,'gone'); }, cfg.matchHoldMs);
+
+  if(k.type==='bad'){
+    S.pts.bad -= cfg.badPenalty;
+    setCombo(0);
+    toast(`+ ${k.emoji} ${k.label}`, 'bad');
+    restart(flashEl,'bad'); flashEl.className='bad';
+    buzz([40,30,40]);
+    return;
+  }
+  S.goodLeft--;
+  S.pts.pairs += cfg.goodScoreTotal/cfg.goodPairs;
+  setCombo(S.combo+1);
+  if(S.combo>=2) S.pts.combo += cfg.comboStep*(S.combo-1);
+  if(k.type==='rare'){
+    S.pts.rare += cfg.rareBonus;
+    toast(`✨ ${k.emoji} ${k.label} ✨`, 'rare');
+    flashEl.className=''; void flashEl.offsetWidth; flashEl.className='rare';
+    burst(); buzz([15,30,15,30,15]);
+  } else {
+    toast(`+ ${k.emoji} ${k.label}`, '');
+    buzz(12);
+  }
+  if(S.combo>=2) toast(`COMBO x${S.combo}${cfg.scoring==='full'?'  +'+cfg.comboStep*(S.combo-1):''}`, 'combo', true);
+  if(S.goodLeft===0) endGame('cleared');
+}
+
+function setCombo(n){
+  S.combo=n; S.bestCombo=Math.max(S.bestCombo,n);
+  if(n>=2){ comboTag.hidden=false; comboTag.textContent='x'+n; restart(comboTag,'bump'); }
+  else comboTag.hidden=true;
+}
+
+function toast(text, kind, append){
+  const t=document.createElement('div');
+  t.className='toast '+(kind||''); t.textContent=text;
+  t.addEventListener('animationend',()=>t.remove());
+  if(append) toastsEl.appendChild(t); else toastsEl.replaceChildren(t);
+}
+
+function endGame(reason){
+  if(S.phase!=='playing') return;
+  S.phase='ending'; S.open=-1;
+  recHint.hidden=true; comboTag.hidden=true;
+  const elapsed=performance.now()-S.t0;
+  S.elapsedMs=Math.min(elapsed,cfg.gameMs);
+  timerEl.classList.remove('low');
+  const remaining = S.cards.map((c,i)=>i).filter(i=>S.cards[i].status!=='gone' && S.cards[i].status!=='match');
+
+  if(reason==='cleared'){
+    // reveal the bad cards you dodged, then results
+    S.dodged=[...new Map(remaining.map(i=>[S.cards[i].kind.id,S.cards[i].kind])).values()];
+    later(()=>remaining.forEach(i=>setCard(i,'up')), cfg.matchHoldMs);
+    later(()=>showResults(reason), cfg.matchHoldMs+cfg.revealDodgedMs);
+  } else {
+    if(reason==='timeout') timerEl.textContent = cfg.timerMode==='countdown' ? '0' : Math.round(cfg.gameMs/1000);
+    remaining.forEach(i=>{
+      const el=S.els[i];
+      const dx=(Math.random()-.5)*260, dy=-120-Math.random()*200, r=(Math.random()-.5)*120;
+      el.style.transition=''; el.classList.add('scatter');
+      el.style.transform=`translate(${dx}px,${dy}px) rotate(${r}deg) scale(.6)`;
+    });
+    later(()=>showResults(reason), 460);
+  }
+}
+
+function showResults(reason){
+  S.phase='result';
+  grid.hidden=true;
+  recBtn.className=''; recBtn.setAttribute('aria-label','Play again');
+  const cleared = reason==='cleared';
+  const hitBad = S.collected.some(k=>k.type==='bad');
+  const gotRare = S.collected.some(k=>k.type==='rare');
+
+  // chips
+  chipsEl.replaceChildren();
+  if(!S.collected.length){
+    const e=document.createElement('div'); e.className='empty'; e.textContent='No pairs yet. 2027 is still unwritten!';
+    chipsEl.appendChild(e);
+  } else {
+    const order={rare:0,good:1,bad:2};
+    S.collected.slice().sort((a,b)=>order[a.type]-order[b.type]).forEach((k,n)=>{
+      const c=document.createElement('div'); c.className='chip '+(k.type==='good'?'':k.type);
+      c.style.animationDelay=(n*70)+'ms'; c.textContent=`${k.emoji} ${k.label}`;
+      chipsEl.appendChild(c);
+    });
+  }
+  resultsEl.hidden=false;
+
+  // banner
+  banner.className='';
+  if(cleared && !hitBad){ banner.textContent = gotRare ? 'LEGENDARY 2027!' : 'PERFECT 2027!'; }
+  else if(cleared){ banner.textContent='2027 UNLOCKED'; }
+  else if(reason==='timeout'){ banner.textContent=cfg.timeoutBanner; banner.className = cfg.celebrateTimeout ? '' : 'plain'; }
+  else { banner.textContent='STOPPED'; banner.className='plain'; }
+  banner.hidden=false;
+
+  // info lines
+  const t=S.elapsedMs/1000;
+  const lines=[];
+  if(cleared) lines.push(`Cleared in ${t.toFixed(1)}s`);
+  if(S.dodged.length) lines.push(`Dodged ${S.dodged.map(k=>k.emoji+' '+k.label).join(', ')}`);
+  if(S.bestCombo>=2) lines.push(`Best combo x${S.bestCombo}`);
+  const setLines = extra => { bonusLine.innerHTML=[...lines, ...(extra?[extra]:[])].map(l=>`<div>${l}</div>`).join(''); bonusLine.hidden=false; };
+  setLines();
+
+  if(cleared){ confetti(gotRare||!hitBad ? 1 : .45); buzz([20,40,20]); }
+  else if(reason==='timeout' && cfg.celebrateTimeout && S.collected.length){ confetti(.35); }
+
+  if(cfg.scoring==='none') return;
+  const p=S.pts;
+  let base = cfg.scoring==='pairs' ? p.pairs : p.pairs+p.rare+p.combo+p.bad;
+  base=Math.max(0,Math.round(base));
+  scorePill.hidden=false; scorePill.textContent='Score: '+base;
+
+  if(cleared && cfg.scoring==='full'){
+    const B=Math.max(0, Math.round((cfg.gameMs/1000 - t)*cfg.timeBonusPerSec));
+    p.speed=B;
+    timerEl.textContent=Math.floor(t);
+    const steps=Math.max(1,Math.min(cfg.bonusSteps,B));
+    for(let k=1;k<=steps && B>0;k++){
+      later(()=>{
+        const add=Math.round(B*k/steps);
+        scorePill.textContent='Score: '+(base+add);
+        restart(scorePill,'bump');
+        setLines(`Speed bonus +${add}`);
+      }, 700+k*cfg.bonusTickMs);
+    }
+  }
+}
+
+/* ---------- loop ---------- */
+function loop(now){
+  if(S.phase==='preview'||S.phase==='playing') recClock.textContent=fmt(now-S.recT0);
+  if(S.phase==='playing'){
+    const el=now-S.t0, left=Math.max(0,cfg.gameMs-el);
+    const sec = cfg.timerMode==='countdown' ? Math.ceil(left/1000) : Math.min(Math.floor(el/1000), Math.round(cfg.gameMs/1000));
+    if(sec!==S.shownSec){
+      S.shownSec=sec; timerEl.textContent=sec;
+      timerEl.classList.toggle('low', Math.ceil(left/1000)<=cfg.lowTimeSec);
+    }
+    recProg.style.strokeDashoffset = RING*(1-Math.min(1,el/cfg.gameMs));
+    if(left<=0) endGame('timeout');
+  }
+  requestAnimationFrame(loop);
+}
+
+/* ---------- confetti ---------- */
+const cv=$('confetti'), cx=cv.getContext('2d');
+let conf={parts:[], raf:0, t0:0};
+const CCOL=['#fe2c55','#25f4ee','#ffd83a','#ffffff','#7b5cff','#22d47e','#ff8fb1'];
+const GCOL=['#ffd83a','#fff1a8','#ffc93a','#ffffff'];
+function prepCanvas(){ const dpr=(window.devicePixelRatio||1)*S.scale; cv.width=390*dpr; cv.height=693*dpr; cx.setTransform(dpr,0,0,dpr,0,0); }
+function addParts(n, fromX, fromY, spread, cols){
+  for(let i=0;i<n;i++){
+    const ribbon=Math.random()<.3, side = fromX==null ? (i%2?-1:1) : (Math.random()<.5?-1:1);
+    conf.parts.push({
+      x: fromX==null ? (side>0?40:350) : fromX, y: fromY,
+      vx: fromX==null ? side*(2+Math.random()*5.5) : (Math.random()-.5)*spread, vy:-(fromX==null?8+Math.random()*9:4+Math.random()*7),
+      w:ribbon?4:7+Math.random()*5, h:ribbon?18+Math.random()*16:4+Math.random()*4,
+      rot:Math.random()*6, vr:(Math.random()-.5)*.35, ph:Math.random()*6,
+      c:cols[Math.random()*cols.length|0], ribbon
+    });
+  }
+}
+function runConfetti(){ cancelAnimationFrame(conf.raf); conf.t0=performance.now(); conf.raf=requestAnimationFrame(drawConfetti); }
+function confetti(amount=1){
+  stopConfetti(); prepCanvas();
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  addParts(Math.round((reduce?40:170)*amount), null, 520, 0, CCOL); runConfetti();
+}
+function burst(){ if(!conf.parts.length) prepCanvas(); addParts(50, 195, 200, 10, GCOL); runConfetti(); }
+function drawConfetti(now){
+  cx.clearRect(0,0,390,693);
+  let alive=0;
+  for(const p of conf.parts){
+    p.vy=Math.min(p.vy+.32,4.2); p.vx*=.985;
+    p.x+=p.vx+Math.sin(now/220+p.ph)*.6; p.y+=p.vy; p.rot+=p.vr;
+    if(p.y<720){ alive++;
+      cx.save(); cx.translate(p.x,p.y); cx.rotate(p.rot);
+      cx.scale(1, p.ribbon?1:Math.cos(now/120+p.ph));
+      cx.fillStyle=p.c; cx.fillRect(-p.w/2,-p.h/2,p.w,p.h); cx.restore();
+    }
+  }
+  if(alive && now-conf.t0<4500) conf.raf=requestAnimationFrame(drawConfetti);
+  else stopConfetti();
+}
+function stopConfetti(){ cancelAnimationFrame(conf.raf); conf.parts=[]; cx.clearRect(0,0,cv.width,cv.height); }
+
+/* ---------- inputs ---------- */
+function onRec(){
+  if(S.phase==='idle'||S.phase==='result') start();
+  else if(S.phase==='playing') endGame('stopped');   // record button doubles as Stop
+}
+recBtn.addEventListener('pointerdown', e=>{ e.preventDefault(); onRec(); });
+recBtn.addEventListener('click', e=>{ if(e.detail===0) onRec(); });
+const resetBtn=$('resetBtn');
+resetBtn.addEventListener('pointerdown', e=>{ e.preventDefault(); start(); });
+resetBtn.addEventListener('click', e=>{ if(e.detail===0) start(); });
+
+/* ---------- test panel ---------- */
+const dev=$('dev'), devPresets=$('devPresets'), devSafe=$('devSafe'), devCfg=$('devCfg');
+function applyPreset(key){
+  presetKey = PRESETS[key] ? key : 'default';
+  cfg={...CONFIG, ...PRESETS[presetKey].o};
+  document.documentElement.style.setProperty('--flip', cfg.flipMs+'ms');
+  document.documentElement.style.setProperty('--gone', cfg.removeMs+'ms');
+}
+function openDev(){
+  devPresets.replaceChildren(...Object.entries(PRESETS).map(([k,p])=>{
+    const l=document.createElement('label');
+    l.innerHTML=`<input type="radio" name="preset" id="preset-${k}" value="${k}" ${k===presetKey?'checked':''}> ${p.label}`;
+    return l;
+  }));
+  devCfg.textContent=JSON.stringify(cfg,null,1).replace(/[{}"]/g,'').trim();
+  dev.hidden=false;
+}
+$('devBtn').addEventListener('click', openDev);
+$('devClose').addEventListener('click', ()=>dev.hidden=true);
+$('devApply').addEventListener('click', ()=>{
+  const sel=devPresets.querySelector('input:checked');
+  applyPreset(sel?sel.value:'default'); dev.hidden=true; showIdle();
+});
+devSafe.addEventListener('change', ()=>safe.classList.toggle('debug', devSafe.checked));
+
+/* ---------- boot ---------- */
+applyPreset((location.hash||'').slice(1) || 'swap');
+fit(); showIdle(); requestAnimationFrame(loop);
+window.__game={S, get cfg(){return cfg}, start, endGame};
+</script>
+</body>
+</html>
