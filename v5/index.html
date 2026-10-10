@@ -50,8 +50,8 @@ html.phone, html.phone body, html.phone #viewport{background:#000}
 /* stage/screen height is set in JS to fill the browser viewport exactly */
 html.phone #stage{width:390px;overflow:hidden}
 html.phone #bg{display:none}
-#cam{display:none;position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:cover;object-position:50% 38%;pointer-events:none}
-html.phone #cam{display:block}    /* camera photo only (no bezel / status bar), cover-fit */
+#cam{display:none;position:absolute;left:0;top:0;width:390px;height:844px;max-width:none;pointer-events:none}
+html.phone #cam{display:block}    /* 390×844 full-screen camera image, same coordinates as the client frames */
 html.phone #screen{left:0;top:0;border-radius:0}
 html.phone #devBtn{left:6px;top:4px;width:22px;height:22px;background:rgba(0,0,0,.35);opacity:.75}
 /* the client frame is drawn in two pieces: top UI pinned to the top edge, bottom UI pinned to the bottom edge */
@@ -459,6 +459,7 @@ function fit(){
   }
   S.scale=s; stage.style.transform=`translate(-50%,-50%) scale(${s})`;
   $('game').style.top=(-L.T)+'px';
+  $('cam').style.top=(-L.T)+'px';
   $('confetti').style.top=(-L.T)+'px';
   safe.style.transform = L.f<1 ? `scale(${L.f})` : '';
   const ft=$('frameTop'), fb=$('frameBot');
