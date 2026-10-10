@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1c1c1e">
 <title>What's your 2027 like? V5</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -449,12 +451,13 @@ function fit(){
     L={T:0, shift:0, f:1, H:844};
     stage.style.height=''; screenEl.style.height='';
   } else {
+    // True 1:1 scale: the 390pt-wide TikTok screen maps to the phone's width, nothing is compressed.
+    // The top T px sit under the real status bar (Safari's page starts below it), so they're cropped;
+    // anything below the visible area is simply cut off by the browser toolbar.
     s=vw/390; let H=vh/s;
-    if(H<PHONE_MIN_H){ H=PHONE_MIN_H; s=vh/H; }
-    if(H>844){ H=844; s=Math.min(vw/390, vh/844); }
-    const T=Math.min(52, 844-H);
-    const shift=Math.max(0, (FRAME_BOTTOM-T)-H);
-    L={T, shift, f:Math.min(1,(SAFE_H-shift)/SAFE_H), H};
+    if(H>844){ H=844; }
+    const T=Math.max(0, Math.min(52, 844-H));      // 52 in Safari; 0 when added to Home Screen (full screen)
+    L={T, shift:0, f:1, H};
     stage.style.height=H+'px'; screenEl.style.height=H+'px';
   }
   S.scale=s; stage.style.transform=`translate(-50%,-50%) scale(${s})`;
