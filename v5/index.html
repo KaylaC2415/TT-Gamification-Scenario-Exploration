@@ -44,7 +44,12 @@ button{font-family:inherit}
 #recHit:focus-visible{outline:2px dashed var(--gold);outline-offset:2px}
 #recHit.debug{background:rgba(255,216,58,.25);outline:1.5px dashed var(--gold)}
 #flash{position:absolute;inset:0;pointer-events:none;opacity:0}
-#flash.bad{background:radial-gradient(circle at 50% 45%,rgba(60,20,90,0) 30%,rgba(60,20,90,.75) 100%);animation:flash 520ms ease-out}
+#flash.bad{background:radial-gradient(circle at 50% 42%,rgba(18,0,28,.55) 0%,rgba(18,0,28,.8) 45%,rgba(8,0,14,.95) 100%);animation:flashBad 750ms ease-out}
+@keyframes flashBad{0%{opacity:0}10%{opacity:1}55%{opacity:1}100%{opacity:0}}
+#cam,#live{transition:filter 250ms ease}
+html.badhit #cam,html.badhit #live{filter:grayscale(.85) brightness(.55) contrast(1.1);transition:filter 120ms ease}
+html.badhit #grid{animation:badShake 380ms ease-out}
+@keyframes badShake{15%{transform:translateX(-7px)}35%{transform:translateX(6px)}55%{transform:translateX(-4px)}75%{transform:translateX(2px)}100%{transform:none}}
 #flash.rare{background:radial-gradient(circle at 50% 45%,rgba(255,220,80,.45) 0%,rgba(255,220,80,0) 70%);animation:flash 700ms ease-out}
 @keyframes flash{0%{opacity:0}20%{opacity:1}100%{opacity:0}}
 /* ---------- Phone mode: no mockup bezel / fake status bar; just the TikTok screen, full-bleed ---------- */
@@ -123,10 +128,11 @@ html.phone #devBtn{left:6px;top:4px;width:22px;height:22px;background:rgba(0,0,0
 .toast.combo{background:var(--tt-red);color:var(--white);font-size:14px;padding:4px 12px}
 @keyframes toast{0%{transform:scale(.6);opacity:0}14%{transform:scale(1.1);opacity:1}24%{transform:scale(1)}72%{opacity:1;transform:translateY(-4px)}100%{opacity:0;transform:translateY(-22px)}}
 
-#banner{position:absolute;left:0;right:0;top:62px;text-align:center;font-weight:900;font-size:26px;color:var(--gold);-webkit-text-stroke:4px var(--ink);paint-order:stroke fill;letter-spacing:.02em;animation:bannerIn 420ms cubic-bezier(.2,1.4,.4,1) both}
+#banner{position:absolute;left:0;right:0;top:62px;text-align:center;font-weight:900;font-size:26px;color:var(--gold);-webkit-text-stroke:4px var(--ink);paint-order:stroke fill;letter-spacing:.02em;animation:bannerIn 420ms cubic-bezier(.2,1.4,.4,1) both,breathe 1.8s ease-in-out 420ms infinite}
 #banner.plain{color:var(--white)}
 #bonusLine{position:absolute;left:0;right:0;top:98px;text-align:center;font-weight:800;font-size:13.5px;line-height:1.5;text-shadow:0 1px 3px rgba(0,0,0,.8);font-variant-numeric:tabular-nums}
 @keyframes bannerIn{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.09)}}
 
 #results{position:absolute;left:0;right:0;top:170px;bottom:22px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:12px}
 #results .label{font-weight:800;font-size:12px;letter-spacing:.14em;text-transform:uppercase;text-shadow:0 1px 3px rgba(0,0,0,.7)}
@@ -136,6 +142,7 @@ html.phone #devBtn{left:6px;top:4px;width:22px;height:22px;background:rgba(0,0,0
 .chip.rare{background:linear-gradient(135deg,var(--rare-1),var(--rare-2));color:var(--ink);text-shadow:none}
 .empty{font-weight:700;font-size:15px;text-align:center;max-width:230px;background:rgba(0,0,0,.5);padding:8px 14px;border-radius:12px}
 @keyframes chipIn{0%{transform:scale(.4) translateY(10px);opacity:0}100%{transform:none;opacity:1}}
+@keyframes chipDrift{0%,100%{transform:translate(0,0) rotate(0deg)}33%{transform:translate(var(--dx1),var(--dy1)) rotate(var(--rw))}66%{transform:translate(var(--dx2),var(--dy2)) rotate(calc(var(--rw) * -1))}}
 /* Reset: 3D arcade button, sits right of the record button (screen coords) */
 #resetBtn{position:absolute;left:290px;top:584px;width:48px;height:48px;z-index:5;border:0;padding:0;border-radius:50%;cursor:pointer;touch-action:manipulation;
   background:radial-gradient(circle at 50% 30%,#ff8a8a 0%,#ff2d3d 38%,#d3102a 72%,#a10b22 100%);
@@ -222,6 +229,7 @@ html.phone #devBtn{left:6px;top:4px;width:22px;height:22px;background:rgba(0,0,0
 [data-skin="sticker"] .card .front.t-bad{background:repeating-linear-gradient(45deg,#3a2a3f 0 8px,#2b1b2e 8px 16px)}
 [data-skin="sticker"] .card .front.t-rare{background:linear-gradient(135deg,#ffd1f0,#c9f7ff 40%,#fff6b0 70%,#e2ccff)}
 [data-skin="sticker"] .card.match .front{box-shadow:0 0 0 3px #fff,0 0 0 6px var(--mint),0 4px 8px rgba(0,0,0,.25)}
+[data-skin="sticker"] .card.match .front.t-bad{box-shadow:0 0 0 3px #fff,0 0 0 6px #9b6bff,0 0 18px #6a2bd9}
 [data-skin="sticker"] .card.miss .front{box-shadow:0 0 0 3px #fff,0 0 0 6px var(--pink)}
 [data-skin="sticker"] #timer{font:400 19px/1 "Chewy",var(--font);width:38px;height:38px;top:24px;border-radius:50%;background:var(--yolk);color:var(--ink2);box-shadow:0 0 0 3px #fff,0 3px 4px rgba(0,0,0,.25);transform:rotate(8deg)}
 [data-skin="sticker"] #timer.low{background:var(--pink);color:#fff}
@@ -234,7 +242,7 @@ html.phone #devBtn{left:6px;top:4px;width:22px;height:22px;background:rgba(0,0,0
 [data-skin="sticker"] .toast.combo{background:var(--pink);color:#fff;font-size:16px;rotate:5deg}
 [data-skin="sticker"] #instruction .pill{font:400 20px/1 "Chewy",var(--font);background:var(--yolk);color:var(--ink2);box-shadow:0 0 0 3px #fff,0 4px 6px rgba(0,0,0,.25);transform:rotate(-3deg)}
 [data-skin="sticker"] #instruction .sub{font-family:"Nunito",var(--font);font-weight:900;background:#fff;color:var(--ink2);transform:rotate(2deg)}
-[data-skin="sticker"] #banner{font:400 28px/1.05 "Chewy",var(--font);text-wrap:balance;padding:0 6px;color:var(--yolk);-webkit-text-stroke:6px var(--pink);transform:rotate(-3deg)}
+[data-skin="sticker"] #banner{font:400 28px/1.05 "Chewy",var(--font);text-wrap:balance;padding:0 6px;color:var(--yolk);-webkit-text-stroke:6px var(--pink)}
 [data-skin="sticker"] #bonusLine{font-family:"Nunito",var(--font);font-weight:900}
 [data-skin="sticker"] #results .label{font:400 20px/1 "Chewy",var(--font);letter-spacing:.02em;text-transform:none;color:#fff;-webkit-text-stroke:5px var(--ink2);paint-order:stroke fill;text-shadow:none}
 [data-skin="sticker"].is-result #banner{top:70px}
@@ -273,7 +281,7 @@ html.phone #devBtn{left:6px;top:4px;width:22px;height:22px;background:rgba(0,0,0
 [data-skin="deco"] .chip.bad{background:#1a0510;color:#ffb3c4;box-shadow:inset 0 0 0 1px var(--crim)}
 [data-skin="deco"] .chip.rare{background:linear-gradient(135deg,var(--gold-2),var(--gold));color:var(--plum);text-shadow:none}
 
-@media (prefers-reduced-motion:reduce){.card .inner{transition-duration:60ms}.toast,.chip,#banner,#count .n,#flash{animation-duration:1ms}}
+@media (prefers-reduced-motion:reduce){.card .inner{transition-duration:60ms}.toast,.chip,#banner,#count .n,#flash{animation-duration:1ms!important;animation-iteration-count:1!important}}
 </style>
 </head>
 <body>
@@ -281,7 +289,7 @@ html.phone #devBtn{left:6px;top:4px;width:22px;height:22px;background:rgba(0,0,0
 <div id="stage">
   <img id="bg" src="assets/background.png" alt="">
   <div id="screen">
-    <img id="cam" src="assets/camera-photo.jpg?v=2" alt="">
+    <img id="cam" src="assets/camera-photo.jpg?v=3" alt="">
     <video id="live" playsinline muted autoplay></video>
     <div id="sbar"></div>
     <div id="game">
@@ -567,7 +575,7 @@ function resetAll(){
 
 /* Card back colours (Lucky Charm skin). 'mixed' = every card different; 'single' = one random colour per round */
 const BACK_COLORS=['#ff5fa2','#ffb35c','#8fd3ff','#7ef0b0','#c8a8ff'];   // pink, orange-yellow, blue, green, purple
-let backMode='single';
+let backMode='mixed';
 function pickRoundColor(){
   const pool=BACK_COLORS.filter(c=>c!==S.roundColor);               // never the same colour twice in a row
   S.roundColor=pool[Math.random()*pool.length|0];
@@ -644,7 +652,9 @@ function onMatch(i,j,k){
     S.pts.bad -= cfg.badPenalty;
     setCombo(0);
     toast(`+ ${k.emoji} ${k.label}`, 'bad');
-    restart(flashEl,'bad'); flashEl.className='bad';
+    flashEl.className=''; void flashEl.offsetWidth; flashEl.className='bad';
+    const root=document.documentElement; root.classList.remove('badhit'); void root.offsetWidth; root.classList.add('badhit');
+    clearTimeout(onMatch.badT); onMatch.badT=setTimeout(()=>root.classList.remove('badhit'), 600);
     buzz([40,30,40]);
     return;
   }
@@ -742,7 +752,12 @@ function showResults(reason){
     const order={rare:0,good:1,bad:2};
     S.collected.slice().sort((a,b)=>order[a.type]-order[b.type]).forEach((k,n)=>{
       const c=document.createElement('div'); c.className='chip '+(k.type==='good'?'':k.type);
-      c.style.animationDelay=(n*70)+'ms'; c.textContent=`${k.emoji} ${k.label}`;
+      const d=n*70, rnd=(a)=>((Math.random()*2-1)*a).toFixed(1);
+      c.style.setProperty('--dx1',rnd(4)+'px'); c.style.setProperty('--dy1',rnd(5)+'px');
+      c.style.setProperty('--dx2',rnd(4)+'px'); c.style.setProperty('--dy2',rnd(5)+'px');
+      c.style.setProperty('--rw',(Math.random()<.5?-1.5:1.5)+'deg');   // wobble ±1.5°
+      c.style.animation=`chipIn 320ms cubic-bezier(.2,1.4,.4,1) ${d}ms both, chipDrift ${(2600+Math.random()*1400)|0}ms ease-in-out ${d+320}ms infinite`;
+      c.textContent=`${k.emoji} ${k.label}`;
       c.style.setProperty('--r', ((n%2?1:-1)*(1+Math.random()*3)).toFixed(1)+'deg');
       c.style.setProperty('--cc', ['#ffe14d','#8fd3ff','#7ef0b0','#c8a8ff','#ffb3d6'][n%5]);
       chipsEl.appendChild(c);
@@ -949,7 +964,7 @@ function applySkin(key, remember=true){
   if(remember){ try{ localStorage.setItem('v5.skin', skinKey); }catch(e){} }
   const r=document.getElementById('skin-'+skinKey); if(r) r.checked=true;
 }
-try{ backMode=localStorage.getItem('v5.backMode')||'single'; }catch(e){ backMode='single'; }
+try{ backMode=localStorage.getItem('v5.backMode')||'mixed'; }catch(e){ backMode='mixed'; }
 if(QS.get('back')) backMode=QS.get('back');
 document.querySelectorAll('input[name="backmode"]').forEach(r=>{
   r.checked = r.value===backMode;
