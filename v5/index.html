@@ -305,7 +305,7 @@ html.phone #devBtn{left:6px;top:4px;width:22px;height:22px;background:rgba(0,0,0
         <div id="count" hidden></div>
         <div id="toasts"></div>
         <div id="grid" class="idle" aria-label="Memory cards"></div>
-        <div id="instruction"><div class="pill">Tap and match pairs</div><div class="sub" id="instrSub">Collect the good luck · dodge the bad</div></div>
+        <div id="instruction"><div class="pill">Tap and match pairs</div><div class="sub" id="instrSub">Collect good luck &amp; avoid the bad</div></div>
         <div id="results" hidden>
           <div class="label">Your 2027</div>
           <div id="chips"></div>
@@ -371,7 +371,7 @@ const CONFIG = {
   scoring: 'full',
   goodScoreTotal: 100,    // all good pairs together are worth this (each = total / goodPairs)
   rareBonus: 30,          // extra for matching the rare pair
-  badPenalty: 20,         // subtracted when a bad pair is matched
+  badPenalty: 10,         // subtracted when a bad pair is matched
   comboStep: 5,           // combo bonus: +comboStep × (combo − 1) on each chained good match
   timeBonusPerSec: 3,     // when all good pairs are collected: + (cap − clear time) × this
   bonusSteps: 24,         // ticks for the bonus count-up
@@ -386,6 +386,8 @@ const CONFIG = {
   timeoutBanner: '2027 REVEALED', // title when time runs out (the normal ending in V4)
   celebrateTimeout: true,         // light confetti on timeout
 };
+
+const INSTRUCTION_SUB = 'Collect good luck & avoid the bad';   // sub-line under "Tap and match pairs"
 
 const GOOD = [
   {id:'love', emoji:'❤️', label:'LOVE'},
@@ -587,7 +589,7 @@ function showIdle(){
   buildDeck(); renderGrid();
   grid.classList.add('idle'); grid.hidden=false; instruction.hidden=false;
   $('instrSub').hidden = cfg.badPairs===0;
-  $('instrSub').textContent = cfg.swapOnMiss ? 'Dodge the bad · wrong picks move!' : 'Collect the good luck · dodge the bad';
+  $('instrSub').textContent = cfg.swapOnMiss ? 'Avoid the bad · wrong picks move!' : INSTRUCTION_SUB;
   recBtn.setAttribute('aria-label','Start game');
   recClock.textContent='00:00';
 }
