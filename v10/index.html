@@ -27,7 +27,7 @@
 }
 [hidden]{display:none!important}
 *,*::before,*::after{box-sizing:border-box}
-html,body{height:100%;margin:0;background:#1c1c1e;overflow:hidden}
+html,body{height:100%;margin:0;background:#1c1c1e;overflow:hidden;touch-action:manipulation;-webkit-text-size-adjust:100%}
 body{font-family:var(--font);color:var(--white);-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
 #viewport{position:fixed;inset:0;overflow:hidden;background:#1c1c1e}
 #stage{position:absolute;left:50%;top:50%;width:436px;height:905px;transform:translate(-50%,-50%);transform-origin:center;touch-action:none}
@@ -179,6 +179,12 @@ html.phone #devBtn{left:6px;top:4px;width:22px;height:22px;background:rgba(0,0,0
   box-shadow:0 6px 8px -4px rgba(0,0,0,.45),inset 0 -10px 12px -10px rgba(120,90,0,.35)}
 #game .chip.pen::before{content:"";position:absolute;left:50%;top:-8px;width:44px;height:14px;transform:translateX(-50%) rotate(-4deg);
   background:rgba(255,255,255,.55);box-shadow:0 0 0 1px rgba(0,0,0,.06)}
+#game .toast.postit{position:relative;background:#fff59a;color:#3b2a14;text-shadow:none;border-radius:3px;rotate:-4deg;
+  font:400 22px/1 "Gochi Hand","Chewy",ui-rounded,system-ui,sans-serif;letter-spacing:.01em;padding:11px 16px 9px;
+  box-shadow:0 6px 8px -4px rgba(0,0,0,.45),inset 0 -10px 12px -10px rgba(120,90,0,.35);animation:postitToast 1500ms ease-out forwards}
+#game .toast.postit::before{content:"";position:absolute;left:50%;top:-8px;width:48px;height:15px;transform:translateX(-50%) rotate(-4deg);
+  background:rgba(255,255,255,.55);box-shadow:0 0 0 1px rgba(0,0,0,.06)}
+@keyframes postitToast{0%{transform:scale(1.5) rotate(-8deg);opacity:0}15%{transform:scale(.94);opacity:1}24%{transform:none}80%{opacity:1;transform:none}100%{opacity:0;transform:translateY(-10px)}}
 @keyframes chipStick{0%{transform:scale(1.4) rotate(-8deg);opacity:0}60%{transform:scale(.94);opacity:1}100%{transform:none;opacity:1}}
 @keyframes chipDrift{0%,100%{transform:translate(0,0) rotate(0deg)}33%{transform:translate(var(--dx1),var(--dy1)) rotate(var(--rw))}66%{transform:translate(var(--dx2),var(--dy2)) rotate(calc(var(--rw) * -1))}}
 /* Reset: 3D arcade button, sits right of the record button (screen coords) */
@@ -480,12 +486,11 @@ const UPGRADES = {
   growth: {emoji:'🧠', label:'BIG BRAIN ERA'},
 };
 /* Penalty words: earned by mismatching too often */
-const PENALTIES = [
-  {id:'clown', emoji:'🤡', label:'CLOWN ERA'},
-  {id:'slow',  emoji:'🐌', label:'SLOW YEAR'},
-  {id:'memory',emoji:'🙈', label:'BAD MEMORY'},
-  {id:'fog',   emoji:'🥴', label:'BRAIN FOG'},
-  {id:'melt',  emoji:'🫠', label:'MELTDOWN'},
+const PENALTIES = [   // V10: all memory-themed so the player links them to forgetting
+  {id:'memory',  emoji:'🙈', label:'BAD MEMORY'},
+  {id:'fog',     emoji:'🥴', label:'BRAIN FOG'},
+  {id:'goldfish',emoji:'🐟', label:'GOLDFISH BRAIN'},
+  {id:'dejavu',  emoji:'🔁', label:'DÉJÀ VU'},
 ];
 
 const RARE = [
@@ -586,6 +591,23 @@ function fit(){
   if(typeof placeRec==='function') placeRec();
 }
 addEventListener('resize', fit);
+/* V10 zoom guard: iOS Safari ignores user-scalable=no, so fast double taps (e.g. on the result screen)
+   or a pinch could zoom the page and leave it zoomed. Block the gestures, and snap back if it still happens. */
+['gesturestart','gesturechange'].forEach(t=>document.addEventListener(t, e=>e.preventDefault(), {passive:false}));
+let lastTouchEnd=0;
+document.addEventListener('touchend', e=>{
+  const now=Date.now();
+  if(now-lastTouchEnd<350 && !e.target.closest('#dev')){ e.preventDefault(); }   // kill double-tap zoom (taps still register via pointer events)
+  lastTouchEnd=now;
+}, {passive:false});
+document.addEventListener('touchmove', e=>{ if(e.touches.length>1) e.preventDefault(); }, {passive:false});
+function resetZoom(){
+  const vv=window.visualViewport; if(!vv || vv.scale<=1.01) return;
+  const m=document.querySelector('meta[name=viewport]'), c=m.content;
+  m.content=c.replace(/maximum-scale=[^,]*/,'maximum-scale=1.0001');   // re-applying the meta forces Safari back to 1x
+  setTimeout(()=>{ m.content=c; fit(); }, 60);
+}
+if(window.visualViewport) visualViewport.addEventListener('resize', ()=>{ if(visualViewport.scale>1.01) setTimeout(resetZoom, 250); });
 
 /* ---------- board ---------- */
 function buildDeck(){
@@ -793,8 +815,8 @@ function updateStrikes(){
 function addPenalty(){
   if(S.penIdx >= cfg.maxPenaltyWords){   // V10 cap: no more stickers, the meter now costs points
     S.pts.bad -= cfg.overCapPenalty; S.goodStreak=0;
-    toast(`−${cfg.overCapPenalty}`, 'bad');
-    flashEl.className=''; void flashEl.offsetWidth; flashEl.className='bad';
+    if(penStyle==='postit') toast(`−${cfg.overCapPenalty}`, 'postit');
+    else { toast(`−${cfg.overCapPenalty}`, 'bad'); flashEl.className=''; void flashEl.offsetWidth; flashEl.className='bad'; }
     restart(strikesEl,'boom'); buzz([40,30,40]);
     return;
   }
@@ -802,10 +824,14 @@ function addPenalty(){
   S.collected.push({...pk, type:'bad', penalty:true});
   S.pts.bad -= cfg.penaltyScore;
   S.goodStreak=0;
-  toast(`+ ${pk.emoji} ${pk.label}`, 'bad');
-  flashEl.className=''; void flashEl.offsetWidth; flashEl.className='bad';
-  const root=document.documentElement; root.classList.remove('badhit'); void root.offsetWidth; root.classList.add('badhit');
-  clearTimeout(onMatch.badT); onMatch.badT=setTimeout(()=>root.classList.remove('badhit'), 600);
+  if(penStyle==='postit'){   // V10: a roast, not bad luck — just slap the post-it on screen (no dark flash / grey cam / shake)
+    toast(`${pk.emoji} ${pk.label}`, 'postit');
+  } else {
+    toast(`+ ${pk.emoji} ${pk.label}`, 'bad');
+    flashEl.className=''; void flashEl.offsetWidth; flashEl.className='bad';
+    const root=document.documentElement; root.classList.remove('badhit'); void root.offsetWidth; root.classList.add('badhit');
+    clearTimeout(onMatch.badT); onMatch.badT=setTimeout(()=>root.classList.remove('badhit'), 600);
+  }
   restart(strikesEl,'boom');
   buzz([40,30,40]);
 }
@@ -905,7 +931,7 @@ function showResults(reason){
       c.style.animation=`${inAnim}, chipDrift ${(2600+Math.random()*1400)|0}ms ease-in-out ${d+(isBad?SLAM_MS:320)}ms infinite`;
       if(isBad){
         c.innerHTML=`<span class="tear">${k.emoji} ${k.label}</span>`;
-        c.style.setProperty('--r', ((n%2?1:-1)*(5+Math.random()*4)).toFixed(1)+'deg');   // crooked: 5–9°
+        c.style.setProperty('--r', ((n%2?1:-1)*(1+Math.random()*3)).toFixed(1)+'deg');   // V10: same tilt as good words (1–4°)
         const sh=!shookOnce; shookOnce=true;
         later(()=>slamImpact(sh), d+Math.round(SLAM_MS*.62));                                    // shake + dark flash on impact
       } else if(isPen){
@@ -1180,12 +1206,12 @@ document.querySelectorAll('input[name=missrule]').forEach(r=>{
   r.addEventListener('change', ()=>{ missRule=r.value; try{ localStorage.setItem('v10.missRule',missRule); }catch(e){}
     if(S.phase!=='playing') return; updateStrikes(); strikesEl.hidden = missRule==='deduct'; });
 });
-let penStyle='torn';
-try{ penStyle=localStorage.getItem('v10.penStyle')||'torn'; }catch(e){}
+let penStyle='postit';
+try{ penStyle=localStorage.getItem('v10.penStyle2')||'postit'; }catch(e){}
 if(QS.get('pen')) penStyle = QS.get('pen')==='postit' ? 'postit' : 'torn';
 document.querySelectorAll('input[name="penstyle"]').forEach(r=>{
   r.checked = r.value===penStyle;
-  r.addEventListener('change', ()=>{ penStyle=r.value; try{ localStorage.setItem('v10.penStyle',penStyle); }catch(e){} });
+  r.addEventListener('change', ()=>{ penStyle=r.value; try{ localStorage.setItem('v10.penStyle2',penStyle); }catch(e){} });
 });
 
 /* ---------- camera ---------- */
