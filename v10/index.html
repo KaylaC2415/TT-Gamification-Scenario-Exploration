@@ -52,7 +52,7 @@ button{font-family:inherit}
 html.end-rain #cam,html.end-rain #live{filter:grayscale(.6) brightness(.75);transition:filter 700ms ease}
 html.badhit #cam,html.badhit #live{filter:grayscale(.85) brightness(.55) contrast(1.1);transition:filter 120ms ease}
 html.badhit #grid{animation:badShake 380ms ease-out}
-@keyframes badShake{15%{transform:translateX(-7px)}35%{transform:translateX(6px)}55%{transform:translateX(-4px)}75%{transform:translateX(2px)}100%{transform:none}}
+@keyframes badShake{20%{transform:translateX(-4px)}45%{transform:translateX(4px)}70%{transform:translateX(-2px)}100%{transform:none}}
 #flash.rare{background:radial-gradient(circle at 50% 45%,rgba(255,220,80,.45) 0%,rgba(255,220,80,0) 70%);animation:flash 700ms ease-out}
 @keyframes flash{0%{opacity:0}20%{opacity:1}100%{opacity:0}}
 /* ---------- Phone mode: no mockup bezel / fake status bar; just the TikTok screen, full-bleed ---------- */
@@ -156,7 +156,7 @@ html.phone #devBtn{left:6px;top:4px;width:22px;height:22px;background:rgba(0,0,0
 #flash.slam{background:radial-gradient(circle at 50% 50%,rgba(18,0,28,.35) 0%,rgba(10,0,16,.8) 100%);animation:flashSlam 380ms ease-out}
 @keyframes flashSlam{0%{opacity:0}15%{opacity:1}100%{opacity:0}}
 #game.slam-shake{animation:slamShake 300ms ease-out}
-@keyframes slamShake{15%{transform:translate(-6px,3px)}35%{transform:translate(5px,-3px)}55%{transform:translate(-3px,2px)}75%{transform:translate(2px,-1px)}100%{transform:none}}
+@keyframes slamShake{20%{transform:translate(-3px,1px)}45%{transform:translate(3px,-1px)}70%{transform:translate(-1px,1px)}100%{transform:none}}
 #banner .b-emoji{-webkit-text-stroke:0;paint-order:normal;display:inline-block}
 /* upgraded result sticker: bigger, gold, shimmering */
 #game .chip.up{position:relative;overflow:hidden;color:#3a2400;text-shadow:none;
@@ -868,9 +868,10 @@ function resultTitle(){
 }
 
 const REVEAL_START=450, REVEAL_STEP=260, SLAM_MS=420;   // result reveal timing (ms)
-function slamImpact(){
+function slamImpact(shake){   // V10: dark flash on every bad sticker, but only the FIRST one shakes the screen (less dizzy)
   flashEl.className=''; void flashEl.offsetWidth; flashEl.className='slam';
-  const g=$('game'); g.classList.remove('slam-shake'); void g.offsetWidth; g.classList.add('slam-shake');
+  const g=$('game'); g.classList.remove('slam-shake');
+  if(shake){ void g.offsetWidth; g.classList.add('slam-shake'); }
   buzz([35]);
 }
 
@@ -884,6 +885,7 @@ function showResults(reason){
 
   // chips
   chipsEl.replaceChildren();
+  let shookOnce=false;
   if(!S.collected.length){
     const e=document.createElement('div'); e.className='empty'; e.textContent='nothing for your 2027… yet 👀';
     chipsEl.appendChild(e);
@@ -904,7 +906,8 @@ function showResults(reason){
       if(isBad){
         c.innerHTML=`<span class="tear">${k.emoji} ${k.label}</span>`;
         c.style.setProperty('--r', ((n%2?1:-1)*(5+Math.random()*4)).toFixed(1)+'deg');   // crooked: 5–9°
-        later(slamImpact, d+Math.round(SLAM_MS*.62));                                    // shake + dark flash on impact
+        const sh=!shookOnce; shookOnce=true;
+        later(()=>slamImpact(sh), d+Math.round(SLAM_MS*.62));                                    // shake + dark flash on impact
       } else if(isPen){
         c.textContent=`${k.emoji} ${k.label}`;
         c.style.setProperty('--r', ((n%2?1:-1)*(3+Math.random()*3)).toFixed(1)+'deg');
