@@ -157,10 +157,10 @@ html.phone #devBtn{left:6px;top:4px;width:22px;height:22px;background:rgba(0,0,0
 .chip.bad .tear{display:flex;align-items:center;gap:5px;padding:8px 16px;color:var(--tear-ink,#fff);
   background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 40' preserveAspectRatio='none'%3E%3Cg fill='none' stroke='%23fff' stroke-opacity='.5' stroke-width='1.1'%3E%3Cpath d='M14 0 L20 12 L13 21 L22 40'/%3E%3Cpath d='M20 12 L30 15'/%3E%3Cpath d='M63 0 L58 11 L67 19 L60 31 L64 40'/%3E%3Cpath d='M67 19 L76 17'/%3E%3Cpath d='M90 4 L84 17 L91 28'/%3E%3C/g%3E%3C/svg%3E") center/100% 100% no-repeat, var(--tear-bg,#2b1b2e);
   clip-path:polygon(0 9%,7% 0,29% 5%,52% 0,76% 6%,100% 0,96% 28%,100% 50%,94% 73%,100% 100%,71% 94%,47% 100%,24% 93%,0 100%,5% 72%,0 47%,6% 24%)}
-@keyframes chipSlam{0%{transform:translateY(-70px) scale(2.3);opacity:0}45%{opacity:1}60%{transform:translateY(5px) scale(.9);opacity:1}80%{transform:translateY(-2px) scale(1.05)}100%{transform:none;opacity:1}}
-#flash.slam{background:radial-gradient(circle at 50% 50%,rgba(18,0,28,.35) 0%,rgba(10,0,16,.8) 100%);animation:flashSlam 200ms ease-out}
+@keyframes chipSlam{0%{transform:translateY(-70px) scale(2.3);opacity:0}45%{opacity:1}62%{transform:translateY(5px) scale(.9);opacity:1}80%{transform:translateY(-2px) scale(1.05)}100%{transform:none;opacity:1}}
+#flash.slam{background:radial-gradient(circle at 50% 50%,rgba(18,0,28,.35) 0%,rgba(10,0,16,.8) 100%);animation:flashSlam 380ms ease-out}
 @keyframes flashSlam{0%{opacity:0}15%{opacity:1}100%{opacity:0}}
-#game.slam-shake{animation:slamShake 200ms ease-out}
+#game.slam-shake{animation:slamShake 300ms ease-out}
 @keyframes slamShake{20%{transform:translate(-3px,1px)}45%{transform:translate(3px,-1px)}70%{transform:translate(-1px,1px)}100%{transform:none}}
 #banner .b-emoji{-webkit-text-stroke:0;paint-order:normal;display:inline-block}
 /* upgraded result sticker: bigger, gold, shimmering */
@@ -490,12 +490,12 @@ const UPGRADES = {
   growth: {emoji:'🧠', label:'BIG BRAIN ERA'},
 };
 /* Penalty words: earned by mismatching too often */
-const PENALTIES = [   // V10: ONE penalty word that escalates each time the miss meter fills (memory-themed)
-  {id:'fog',     emoji:'🥴', label:'BRAIN FOG'},
-  {id:'memory',  emoji:'🙈', label:'BAD MEMORY'},
-  {id:'goldfish',emoji:'🐟', label:'GOLDFISH BRAIN'},
-  {id:'wiped',   emoji:'🫥', label:'MEMORY WIPED'},
-  {id:'crash',   emoji:'💀', label:'BRAIN.EXE CRASHED'},
+const PENALTIES = [   // V10: ONE penalty word that escalates each time the miss meter fills — 2027 consequences of a bad memory
+  {id:'keys',   emoji:'🔑', label:'LOST KEYS'},
+  {id:'bday',   emoji:'🎂', label:'FORGOT BIRTHDAYS'},
+  {id:'flight', emoji:'✈️', label:'MISSED FLIGHT'},
+  {id:'locked', emoji:'🔒', label:'LOCKED OUT'},
+  {id:'whoami', emoji:'🫥', label:'WHO AM I?'},
 ];
 
 const RARE = [
@@ -896,7 +896,7 @@ function resultTitle(){
   return good>=4 ? RESULT_TITLES.main : RESULT_TITLES.mid;
 }
 
-const REVEAL_START=450, REVEAL_STEP=260, SLAM_MS=300, SLAM_IMPACT=.6, BAD_STEP=380;   // bad: lands at 180ms, flash+shake done by ~380ms   // result reveal timing (ms)
+const REVEAL_START=450, REVEAL_STEP=260, SLAM_MS=420, SLAM_IMPACT=.62, SLAM_FLASH_MS=380;   // bad stickers slam on the same 0.26s beat — back-to-back hits   // result reveal timing (ms)
 function slamImpact(shake){   // V10: dark flash on every bad sticker, but only the FIRST one shakes the screen (less dizzy)
   flashEl.className=''; void flashEl.offsetWidth; flashEl.className='slam';
   const g=$('game'); g.classList.remove('slam-shake');
@@ -915,7 +915,7 @@ function showResults(reason){
   // chips
   chipsEl.replaceChildren();
   const notesEl=$('penNotes'); notesEl.replaceChildren(); notesEl.hidden=true;
-  let shookOnce=false, tNext=REVEAL_START;   // V10: reveal times accumulate so a slam finishes before the next sticker
+  let shookOnce=false, tNext=REVEAL_START, lastSlamEnd=0;   // V10: reveal times accumulate so a slam finishes before the next sticker
   const asNote = k => !!k.penalty && penStyle==='postit';
   const fortune = S.collected.filter(k=>!asNote(k)), notes = S.collected.filter(asNote);
   if(!fortune.length){
@@ -935,7 +935,8 @@ function showResults(reason){
                    : isPen ? `chipStick 380ms cubic-bezier(.2,1.5,.4,1) ${d}ms both`
                    : `chipIn 320ms cubic-bezier(.2,1.4,.4,1) ${d}ms both`;
       c.style.animation=`${inAnim}, chipDrift ${(2600+Math.random()*1400)|0}ms ease-in-out ${d+(isBad?SLAM_MS:320)}ms infinite`;
-      tNext += isBad ? BAD_STEP : REVEAL_STEP;   // let the slam + dark flash play out
+      tNext += REVEAL_STEP;
+      if(isBad) lastSlamEnd = d + Math.round(SLAM_MS*SLAM_IMPACT) + SLAM_FLASH_MS;   // let the slam + dark flash play out
       if(isBad){
         c.innerHTML=`<span class="tear">${k.emoji} ${k.label}</span>`;
         c.style.setProperty('--r', ((n%2?1:-1)*(1+Math.random()*3)).toFixed(1)+'deg');   // V10: same tilt as good words (1–4°)
@@ -954,7 +955,7 @@ function showResults(reason){
   }
   // post-it penalty notes land last, under the score — the final roast
   if(notes.length){
-    notesEl.hidden=false; tNext += 200;
+    notesEl.hidden=false; tNext = Math.max(tNext, lastSlamEnd) + 120;   // post-its wait for the last dark flash to finish
     notes.forEach((k,n)=>{
       const c=document.createElement('div'); c.className='chip pen'; c.textContent=`${k.emoji} ${k.label}`;
       c.style.setProperty('--r', ((n%2?1:-1)*(3+Math.random()*3)).toFixed(1)+'deg');
@@ -1225,12 +1226,12 @@ document.querySelectorAll('input[name=missrule]').forEach(r=>{
   r.addEventListener('change', ()=>{ missRule=r.value; try{ localStorage.setItem('v10.missRule',missRule); }catch(e){}
     if(S.phase!=='playing') return; updateStrikes(); strikesEl.hidden = missRule==='deduct'; });
 });
-let penStyle='postit';
-try{ penStyle=localStorage.getItem('v10.penStyle2')||'postit'; }catch(e){}
+let penStyle='torn';
+try{ penStyle=localStorage.getItem('v10.penStyle3')||'torn'; }catch(e){}
 if(QS.get('pen')) penStyle = QS.get('pen')==='postit' ? 'postit' : 'torn';
 document.querySelectorAll('input[name="penstyle"]').forEach(r=>{
   r.checked = r.value===penStyle;
-  r.addEventListener('change', ()=>{ penStyle=r.value; try{ localStorage.setItem('v10.penStyle2',penStyle); }catch(e){} });
+  r.addEventListener('change', ()=>{ penStyle=r.value; try{ localStorage.setItem('v10.penStyle3',penStyle); }catch(e){} });
 });
 
 /* ---------- camera ---------- */
