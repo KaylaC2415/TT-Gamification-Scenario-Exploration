@@ -84,6 +84,11 @@ html.phone #devBtn{left:6px;top:4px;width:22px;height:22px;background:rgba(0,0,0
 #safe.debug{outline:1.5px dashed var(--gold)}
 .title{position:absolute;top:6px;left:0;right:0;text-align:center;font-weight:800;font-size:13px;letter-spacing:.01em;text-shadow:0 1px 3px rgba(0,0,0,.55);text-wrap:balance}
 #scorePill{position:absolute;top:32px;left:50%;transform:translateX(-50%);background:var(--white);color:var(--ink);font-weight:800;font-size:15px;padding:3px 12px;border-radius:999px;font-variant-numeric:tabular-nums;white-space:nowrap}
+/* V10: post-it penalty notes stuck under the score — a roast of how you played, not part of your 2027 */
+#penNotes{position:absolute;top:60px;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none;z-index:2}
+#game #penNotes .chip.pen{font-size:16px;padding:8px 12px 6px;white-space:nowrap}
+#game #penNotes .chip.pen:nth-child(2){margin-left:34px}
+#game #penNotes .chip.pen::before{width:34px;height:11px;top:-6px}
 #scorePill.bump{animation:bump 160ms ease-out}
 @keyframes bump{50%{transform:translateX(-50%) scale(1.15)}}
 #timer{position:absolute;top:32px;right:4px;min-width:28px;height:24px;padding:0 6px;background:var(--white);color:var(--ink);font-weight:800;font-size:15px;display:grid;place-items:center;border-radius:4px;font-variant-numeric:tabular-nums}
@@ -152,10 +157,10 @@ html.phone #devBtn{left:6px;top:4px;width:22px;height:22px;background:rgba(0,0,0
 .chip.bad .tear{display:flex;align-items:center;gap:5px;padding:8px 16px;color:var(--tear-ink,#fff);
   background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 40' preserveAspectRatio='none'%3E%3Cg fill='none' stroke='%23fff' stroke-opacity='.5' stroke-width='1.1'%3E%3Cpath d='M14 0 L20 12 L13 21 L22 40'/%3E%3Cpath d='M20 12 L30 15'/%3E%3Cpath d='M63 0 L58 11 L67 19 L60 31 L64 40'/%3E%3Cpath d='M67 19 L76 17'/%3E%3Cpath d='M90 4 L84 17 L91 28'/%3E%3C/g%3E%3C/svg%3E") center/100% 100% no-repeat, var(--tear-bg,#2b1b2e);
   clip-path:polygon(0 9%,7% 0,29% 5%,52% 0,76% 6%,100% 0,96% 28%,100% 50%,94% 73%,100% 100%,71% 94%,47% 100%,24% 93%,0 100%,5% 72%,0 47%,6% 24%)}
-@keyframes chipSlam{0%{transform:translateY(-70px) scale(2.3);opacity:0}45%{opacity:1}62%{transform:translateY(5px) scale(.9);opacity:1}80%{transform:translateY(-2px) scale(1.05)}100%{transform:none;opacity:1}}
-#flash.slam{background:radial-gradient(circle at 50% 50%,rgba(18,0,28,.35) 0%,rgba(10,0,16,.8) 100%);animation:flashSlam 380ms ease-out}
+@keyframes chipSlam{0%{transform:translateY(-70px) scale(2.3);opacity:0}45%{opacity:1}60%{transform:translateY(5px) scale(.9);opacity:1}80%{transform:translateY(-2px) scale(1.05)}100%{transform:none;opacity:1}}
+#flash.slam{background:radial-gradient(circle at 50% 50%,rgba(18,0,28,.35) 0%,rgba(10,0,16,.8) 100%);animation:flashSlam 200ms ease-out}
 @keyframes flashSlam{0%{opacity:0}15%{opacity:1}100%{opacity:0}}
-#game.slam-shake{animation:slamShake 300ms ease-out}
+#game.slam-shake{animation:slamShake 200ms ease-out}
 @keyframes slamShake{20%{transform:translate(-3px,1px)}45%{transform:translate(3px,-1px)}70%{transform:translate(-1px,1px)}100%{transform:none}}
 #banner .b-emoji{-webkit-text-stroke:0;paint-order:normal;display:inline-block}
 /* upgraded result sticker: bigger, gold, shimmering */
@@ -346,6 +351,7 @@ html.phone #devBtn{left:6px;top:4px;width:22px;height:22px;background:rgba(0,0,0
         <div class="title"><span>What's your 2027 like?</span></div>
         <div id="comboTag" hidden>x2</div>
         <div id="scorePill" hidden>Score: 0</div>
+        <div id="penNotes" hidden></div>
         <div id="timer" hidden>0</div>
         <div id="strikes" hidden></div>
         <div id="banner" hidden></div>
@@ -380,8 +386,8 @@ html.phone #devBtn{left:6px;top:4px;width:22px;height:22px;background:rgba(0,0,0
       <label><input type="radio" name="backmode" id="back-mixed" value="mixed"> Mixed: every card a different colour</label>
       <label><input type="radio" name="backmode" id="back-single" value="single"> Single: one random colour per round</label>
       <h3>Mistake rule</h3>
-      <label><input type="radio" name="missrule" value="all5"> Every mismatch · 5 → penalty word (max 2, then −10)</label>
-      <label><input type="radio" name="missrule" value="mem3"> Memory errors only · 3 → penalty word (max 2, then −10)</label>
+      <label><input type="radio" name="missrule" value="all5"> Every mismatch · 5 → penalty word (1 word, escalates)</label>
+      <label><input type="radio" name="missrule" value="mem3"> Memory errors only · 3 → penalty word (1 word, escalates)</label>
       <label><input type="radio" name="missrule" value="deduct"> Memory errors only · −3 pts, no word</label>
       <h3>Penalty words</h3>
       <label><input type="radio" name="penstyle" id="pen-torn" value="torn"> Torn sticker (same as bad luck)</label>
@@ -430,8 +436,6 @@ const CONFIG = {
   missesPerPenalty: 5,    // option A (all mismatches)
   memErrPerPenalty: 3,    // option 'mem3' (memory errors only)
   missPenalty: 3,
-  maxPenaltyWords: 2,     // V10: after this many penalty words, a full meter costs points instead (no new sticker)
-  overCapPenalty: 10,         // option 'deduct': points lost per memory error
   missesPerPenaltyOrig: 5,    // every N mismatches adds a penalty word to your 2027
   fxTiers: {gold:150, confetti:90, sparkle:45},   // V9: ending effect by FINAL score (incl. speed bonus); below sparkle → rain
   penaltyScore: 10,       // points lost per penalty word
@@ -486,11 +490,12 @@ const UPGRADES = {
   growth: {emoji:'🧠', label:'BIG BRAIN ERA'},
 };
 /* Penalty words: earned by mismatching too often */
-const PENALTIES = [   // V10: all memory-themed so the player links them to forgetting
-  {id:'memory',  emoji:'🙈', label:'BAD MEMORY'},
+const PENALTIES = [   // V10: ONE penalty word that escalates each time the miss meter fills (memory-themed)
   {id:'fog',     emoji:'🥴', label:'BRAIN FOG'},
+  {id:'memory',  emoji:'🙈', label:'BAD MEMORY'},
   {id:'goldfish',emoji:'🐟', label:'GOLDFISH BRAIN'},
-  {id:'dejavu',  emoji:'🔁', label:'DÉJÀ VU'},
+  {id:'wiped',   emoji:'🫥', label:'MEMORY WIPED'},
+  {id:'crash',   emoji:'💀', label:'BRAIN.EXE CRASHED'},
 ];
 
 const RARE = [
@@ -671,12 +676,12 @@ function resetAll(){
   clearLater(); stopConfetti();
   S.open=-1; S.collected=[]; S.dodged=[]; S.combo=0; S.bestCombo=0; S.shownSec=null;
   S.pts={pairs:0, rare:0, combo:0, bad:0, speed:0, upg:0};
-  S.seen=new Set(); S.goodStreak=0; S.misses=0; S.penIdx=0; S.penOrder=shuffle(PENALTIES.slice());
+  S.seen=new Set(); S.goodStreak=0; S.misses=0; S.penIdx=0;
   strikesEl.hidden=true;
   $('game').classList.remove('end-rain'); document.documentElement.classList.remove('end-rain');
   toastsEl.replaceChildren(); flashEl.className='';
   resultsEl.hidden=true; resetBtn.hidden=true; $('game').classList.remove('is-result'); banner.hidden=true; bonusLine.hidden=true; countEl.hidden=true;
-  scorePill.hidden=true; comboTag.hidden=true; recHint.hidden=true;
+  scorePill.hidden=true; $('penNotes').hidden=true; comboTag.hidden=true; recHint.hidden=true;
   timerEl.hidden=true; timerEl.classList.remove('low');
   recProg.style.strokeDashoffset=RING;
 }
@@ -813,21 +818,19 @@ function updateStrikes(){
   strikesEl.innerHTML=Array.from({length:n},(_,i)=>`<i class="${i<k?'on':''}">✕</i>`).join('');
 }
 function addPenalty(){
-  if(S.penIdx >= cfg.maxPenaltyWords){   // V10 cap: no more stickers, the meter now costs points
-    S.pts.bad -= cfg.overCapPenalty; S.goodStreak=0;
-    if(penStyle==='postit') toast(`−${cfg.overCapPenalty}`, 'postit');
-    else { toast(`−${cfg.overCapPenalty}`, 'bad'); flashEl.className=''; void flashEl.offsetWidth; flashEl.className='bad'; }
-    restart(strikesEl,'boom'); buzz([40,30,40]);
-    return;
-  }
-  const pk=S.penOrder[S.penIdx++ % S.penOrder.length];
+  // V10: only ONE penalty word ever sits in your results — each full meter upgrades it to a worse one (−10 every time)
+  const lvl=Math.min(S.penIdx, PENALTIES.length-1), pk=PENALTIES[lvl];
+  const prev = S.penIdx>0 ? PENALTIES[Math.min(S.penIdx-1, PENALTIES.length-1)] : null;
+  S.penIdx++;
+  S.collected = S.collected.filter(k=>!k.penalty);
   S.collected.push({...pk, type:'bad', penalty:true});
   S.pts.bad -= cfg.penaltyScore;
   S.goodStreak=0;
-  if(penStyle==='postit'){   // V10: a roast, not bad luck — just slap the post-it on screen (no dark flash / grey cam / shake)
-    toast(`${pk.emoji} ${pk.label}`, 'postit');
+  const txt = prev && prev.id!==pk.id ? `${prev.emoji} → ${pk.emoji} ${pk.label}` : `${pk.emoji} ${pk.label}`;
+  if(penStyle==='postit'){   // a roast, not bad luck — just slap the post-it on screen (no dark flash / grey cam / shake)
+    toast(txt, 'postit');
   } else {
-    toast(`+ ${pk.emoji} ${pk.label}`, 'bad');
+    toast((prev?'':'+ ')+txt, 'bad');
     flashEl.className=''; void flashEl.offsetWidth; flashEl.className='bad';
     const root=document.documentElement; root.classList.remove('badhit'); void root.offsetWidth; root.classList.add('badhit');
     clearTimeout(onMatch.badT); onMatch.badT=setTimeout(()=>root.classList.remove('badhit'), 600);
@@ -893,7 +896,7 @@ function resultTitle(){
   return good>=4 ? RESULT_TITLES.main : RESULT_TITLES.mid;
 }
 
-const REVEAL_START=450, REVEAL_STEP=260, SLAM_MS=420;   // result reveal timing (ms)
+const REVEAL_START=450, REVEAL_STEP=260, SLAM_MS=300, SLAM_IMPACT=.6, BAD_STEP=380;   // bad: lands at 180ms, flash+shake done by ~380ms   // result reveal timing (ms)
 function slamImpact(shake){   // V10: dark flash on every bad sticker, but only the FIRST one shakes the screen (less dizzy)
   flashEl.className=''; void flashEl.offsetWidth; flashEl.className='slam';
   const g=$('game'); g.classList.remove('slam-shake');
@@ -911,17 +914,20 @@ function showResults(reason){
 
   // chips
   chipsEl.replaceChildren();
-  let shookOnce=false;
-  if(!S.collected.length){
+  const notesEl=$('penNotes'); notesEl.replaceChildren(); notesEl.hidden=true;
+  let shookOnce=false, tNext=REVEAL_START;   // V10: reveal times accumulate so a slam finishes before the next sticker
+  const asNote = k => !!k.penalty && penStyle==='postit';
+  const fortune = S.collected.filter(k=>!asNote(k)), notes = S.collected.filter(asNote);
+  if(!fortune.length){
     const e=document.createElement('div'); e.className='empty'; e.textContent='nothing for your 2027… yet 👀';
     chipsEl.appendChild(e);
   } else {
     const order={rare:0,good:1,bad:2};
     const rank=k=> k.penalty ? 3 : k.upgraded ? 0.5 : order[k.type];
-    S.collected.slice().sort((a,b)=>rank(a)-rank(b)).forEach((k,n)=>{
+    fortune.slice().sort((a,b)=>rank(a)-rank(b)).forEach((k,n)=>{
       const isPen=!!k.penalty && penStyle==='postit', isBad=k.type==='bad' && !isPen;   // torn style: penalty words look exactly like bad luck
       const c=document.createElement('div'); c.className='chip '+(isPen?'pen':(k.type==='good'?'':k.type))+(k.upgraded?' up':'');
-      const d=REVEAL_START+n*REVEAL_STEP, rnd=(a)=>((Math.random()*2-1)*a).toFixed(1);
+      const d=tNext, rnd=(a)=>((Math.random()*2-1)*a).toFixed(1);
       c.style.setProperty('--dx1',rnd(1.5)+'px'); c.style.setProperty('--dy1',rnd(2)+'px');   // gentle drift
       c.style.setProperty('--dx2',rnd(1.5)+'px'); c.style.setProperty('--dy2',rnd(2)+'px');
       c.style.setProperty('--rw',(Math.random()<.5?-.8:.8)+'deg');   // wobble ±0.8°
@@ -929,11 +935,12 @@ function showResults(reason){
                    : isPen ? `chipStick 380ms cubic-bezier(.2,1.5,.4,1) ${d}ms both`
                    : `chipIn 320ms cubic-bezier(.2,1.4,.4,1) ${d}ms both`;
       c.style.animation=`${inAnim}, chipDrift ${(2600+Math.random()*1400)|0}ms ease-in-out ${d+(isBad?SLAM_MS:320)}ms infinite`;
+      tNext += isBad ? BAD_STEP : REVEAL_STEP;   // let the slam + dark flash play out
       if(isBad){
         c.innerHTML=`<span class="tear">${k.emoji} ${k.label}</span>`;
         c.style.setProperty('--r', ((n%2?1:-1)*(1+Math.random()*3)).toFixed(1)+'deg');   // V10: same tilt as good words (1–4°)
         const sh=!shookOnce; shookOnce=true;
-        later(()=>slamImpact(sh), d+Math.round(SLAM_MS*.62));                                    // shake + dark flash on impact
+        later(()=>slamImpact(sh), d+Math.round(SLAM_MS*SLAM_IMPACT));                                    // shake + dark flash on impact
       } else if(isPen){
         c.textContent=`${k.emoji} ${k.label}`;
         c.style.setProperty('--r', ((n%2?1:-1)*(3+Math.random()*3)).toFixed(1)+'deg');
@@ -943,6 +950,18 @@ function showResults(reason){
       }
       c.style.setProperty('--cc', ['#ffe14d','#8fd3ff','#7ef0b0','#c8a8ff','#ffb3d6'][n%5]);
       chipsEl.appendChild(c);
+    });
+  }
+  // post-it penalty notes land last, under the score — the final roast
+  if(notes.length){
+    notesEl.hidden=false; tNext += 200;
+    notes.forEach((k,n)=>{
+      const c=document.createElement('div'); c.className='chip pen'; c.textContent=`${k.emoji} ${k.label}`;
+      c.style.setProperty('--r', ((n%2?1:-1)*(3+Math.random()*3)).toFixed(1)+'deg');
+      c.style.animation=`chipStick 380ms cubic-bezier(.2,1.5,.4,1) ${tNext}ms both`;
+      later(()=>buzz(15), tNext+150);
+      tNext += REVEAL_STEP+120;
+      notesEl.appendChild(c);
     });
   }
   resultsEl.hidden=false; resetBtn.hidden=false; $('game').classList.add('is-result');
@@ -970,7 +989,7 @@ function showResults(reason){
   //   Penalty words (memory errors) never change the tier — only REAL bad luck does.
   //   nothing → none · real bad > good → rain + gloom · good ≥ real bad (some real bad) → sparkles
   //   no real bad → side confetti · no real bad + surprise/upgrade/cleared board → gold shower + confetti
-  const revealEnd = REVEAL_START + S.collected.length*REVEAL_STEP;
+  const revealEnd = S.collected.length ? tNext : REVEAL_START;
   // V9: the ending effect follows the FINAL score (pairs, surprise, combos, upgrades, bad luck,
   // penalty words and speed bonus all included). Nothing collected → no effect.
   const pp=S.pts, T=cfg.fxTiers;
