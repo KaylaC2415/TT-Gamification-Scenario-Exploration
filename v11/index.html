@@ -290,9 +290,9 @@ html.phone #devBtn{left:6px;top:4px;width:22px;height:22px;background:rgba(0,0,0
 [data-skin="sticker"] .card.miss .front{box-shadow:0 0 0 3px #fff,0 0 0 6px var(--pink)}
 [data-skin="sticker"] #timer{font:400 18px/1 "Chewy",var(--font);width:auto;min-width:0;height:30px;padding:0 11px;top:28px;border-radius:15px;background:var(--yolk);color:var(--ink2);box-shadow:0 0 0 3px #fff,0 3px 4px rgba(0,0,0,.25);transform:rotate(8deg)}
 [data-skin="sticker"] #timer.low{background:var(--pink);color:#fff}
-[data-skin="sticker"] #scorePill{font:400 18px/1 "Chewy",var(--font);background:#fff;color:var(--ink2);padding:6px 14px;box-shadow:0 0 0 3px #fff,0 3px 4px rgba(0,0,0,.25);transform:translateX(-50%);top:28px}
-[data-skin="sticker"] #comboTag{font:400 15px/1 "Chewy",var(--font);background:var(--lav);color:var(--ink2);border-radius:10px;box-shadow:0 0 0 3px #fff;transform:rotate(-8deg);top:28px}
-[data-skin="sticker"] #comboTag::before{content:"🔥 "}
+[data-skin="sticker"] #scorePill{font:400 18px/1 "Chewy",var(--font);background:#fff;color:var(--ink2);padding:6px 14px;box-shadow:0 0 0 3px #fff,0 3px 4px rgba(0,0,0,.25);transform:translateX(-50%);top:23px}   /* V11: tops line up with the tilted timer */
+[data-skin="sticker"] #comboTag{font:400 16px/1 "Chewy",var(--font);height:30px;padding:0 10px 0 7px;white-space:nowrap;display:flex;align-items:center;gap:3px;background:var(--lav);color:var(--ink2);border-radius:10px;box-shadow:0 0 0 3px #fff;transform:rotate(-8deg);top:28px}
+[data-skin="sticker"] #comboTag::before{content:"🔥"}
 [data-skin="sticker"] .toast{font:400 20px/1 "Chewy",var(--font);background:var(--yolk);color:var(--ink2);box-shadow:0 0 0 3px #fff,0 4px 6px rgba(0,0,0,.25);rotate:-4deg}
 [data-skin="sticker"] .toast.bad{background:#2b1b2e;color:#fff}
 [data-skin="sticker"] .toast.rare{background:linear-gradient(135deg,#ffd1f0,#c9f7ff 45%,#fff6b0);rotate:3deg;font-size:22px}
@@ -734,6 +734,18 @@ function beginPlay(){
   S.open=-1; S.phase='playing'; S.t0=performance.now(); S.shownSec=null;
   recHint.hidden=false;
   strikesEl.hidden = true;   // V11: no miss meter
+  if(QS.get('demo')) demoPlay(QS.get('demo'));
+}
+/* V11 cheat code: ?demo=gold → auto-clears the board fast (every good pair in a row) to preview the ending
+   ?demo=bad → same, but matches one bad pair in the middle (breaks the streak, shows the bad-luck slam) */
+function demoPlay(mode){
+  const C=S.cards, by={}; C.forEach((c,i)=>(by[c.kind.id]=by[c.kind.id]||[]).push(i));
+  const pairs=Object.values(by), good=pairs.filter(ix=>C[ix[0]].kind.type!=='bad'), bad=pairs.filter(ix=>C[ix[0]].kind.type==='bad');
+  const seq = mode==='bad' ? [...good.slice(0,3), bad[0], ...good.slice(3)] : good;
+  seq.forEach((ix,n)=>{
+    later(()=>onTap(ix[0]), 500+n*420);
+    later(()=>onTap(ix[1]), 500+n*420+180);
+  });
 }
 
 function onTap(i){
@@ -1024,7 +1036,7 @@ function showResults(reason){
     p.speed=B;
     timerEl.textContent = fmtSec(remShown); timerEl.classList.remove('spent');
     if(B>0){
-      const t0 = revealEnd + 250, DRAIN=300, FLY=480;
+      const t0 = 250, DRAIN=300, FLY=480;   // starts together with the ending effect
       later(()=>{   // drain the timer
         const st=performance.now();
         const step=now=>{ if(S.phase!=='result') return;
