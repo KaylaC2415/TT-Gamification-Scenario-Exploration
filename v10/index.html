@@ -159,6 +159,9 @@ html.phone #devBtn{left:6px;top:4px;width:22px;height:22px;background:rgba(0,0,0
   clip-path:polygon(0 9%,7% 0,29% 5%,52% 0,76% 6%,100% 0,96% 28%,100% 50%,94% 73%,100% 100%,71% 94%,47% 100%,24% 93%,0 100%,5% 72%,0 47%,6% 24%)}
 @keyframes chipSlam{0%{transform:translateY(-70px) scale(2.3);opacity:0}45%{opacity:1}62%{transform:translateY(5px) scale(.9);opacity:1}80%{transform:translateY(-2px) scale(1.05)}100%{transform:none;opacity:1}}
 #flash.slam{background:radial-gradient(circle at 50% 50%,rgba(18,0,28,.35) 0%,rgba(10,0,16,.8) 100%);animation:flashSlam 380ms ease-out}
+/* V10: with 2+ bad stickers the screen goes dark on the first hit and STAYS dark until the last one lands (no strobing) */
+#flash.slamhold{background:radial-gradient(circle at 50% 50%,rgba(18,0,28,.35) 0%,rgba(10,0,16,.8) 100%);opacity:1;transition:opacity 60ms ease-out}
+#flash.slamhold.out{opacity:0;transition:opacity 380ms ease-out}
 @keyframes flashSlam{0%{opacity:0}15%{opacity:1}100%{opacity:0}}
 #game.slam-shake{animation:slamShake 300ms ease-out}
 @keyframes slamShake{20%{transform:translate(-3px,1px)}45%{transform:translate(3px,-1px)}70%{transform:translate(-1px,1px)}100%{transform:none}}
@@ -897,8 +900,8 @@ function resultTitle(){
 }
 
 const REVEAL_START=450, REVEAL_STEP=260, SLAM_MS=420, SLAM_IMPACT=.62, SLAM_FLASH_MS=380;   // bad stickers slam on the same 0.26s beat — back-to-back hits   // result reveal timing (ms)
-function slamImpact(shake){   // V10: dark flash on every bad sticker, but only the FIRST one shakes the screen (less dizzy)
-  flashEl.className=''; void flashEl.offsetWidth; flashEl.className='slam';
+function slamImpact(shake, flash){   // V10: only the FIRST bad sticker shakes; with 2+ bad stickers the dark is held (see showResults)
+  if(flash){ flashEl.className=''; void flashEl.offsetWidth; flashEl.className='slam'; }
   const g=$('game'); g.classList.remove('slam-shake');
   if(shake){ void g.offsetWidth; g.classList.add('slam-shake'); }
   buzz([35]);
@@ -915,7 +918,7 @@ function showResults(reason){
   // chips
   chipsEl.replaceChildren();
   const notesEl=$('penNotes'); notesEl.replaceChildren(); notesEl.hidden=true;
-  let shookOnce=false, tNext=REVEAL_START, lastSlamEnd=0;   // V10: reveal times accumulate so a slam finishes before the next sticker
+  let shookOnce=false, tNext=REVEAL_START, lastSlamEnd=0; const impacts=[];   // V10: reveal times accumulate so a slam finishes before the next sticker
   const asNote = k => !!k.penalty && penStyle==='postit';
   const fortune = S.collected.filter(k=>!asNote(k)), notes = S.collected.filter(asNote);
   if(!fortune.length){
@@ -941,7 +944,7 @@ function showResults(reason){
         c.innerHTML=`<span class="tear">${k.emoji} ${k.label}</span>`;
         c.style.setProperty('--r', ((n%2?1:-1)*(1+Math.random()*3)).toFixed(1)+'deg');   // V10: same tilt as good words (1–4°)
         const sh=!shookOnce; shookOnce=true;
-        later(()=>slamImpact(sh), d+Math.round(SLAM_MS*SLAM_IMPACT));                                    // shake + dark flash on impact
+        impacts.push({t:d+Math.round(SLAM_MS*SLAM_IMPACT), sh});                                    // shake + dark flash on impact
       } else if(isPen){
         c.textContent=`${k.emoji} ${k.label}`;
         c.style.setProperty('--r', ((n%2?1:-1)*(3+Math.random()*3)).toFixed(1)+'deg');
@@ -952,6 +955,15 @@ function showResults(reason){
       c.style.setProperty('--cc', ['#ffe14d','#8fd3ff','#7ef0b0','#c8a8ff','#ffb3d6'][n%5]);
       chipsEl.appendChild(c);
     });
+  }
+  if(impacts.length===1){ later(()=>slamImpact(impacts[0].sh, true), impacts[0].t); }
+  else if(impacts.length>1){
+    impacts.forEach(im=>later(()=>slamImpact(im.sh, false), im.t));
+    later(()=>{ flashEl.className=''; void flashEl.offsetWidth; flashEl.className='slamhold'; }, impacts[0].t);
+    const endT=impacts[impacts.length-1].t+180;
+    later(()=>{ flashEl.classList.add('out'); }, endT);
+    later(()=>{ if(flashEl.classList.contains('slamhold')) flashEl.className=''; }, endT+420);
+    lastSlamEnd=endT+380;
   }
   // post-it penalty notes land last, under the score — the final roast
   if(notes.length){
