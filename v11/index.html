@@ -93,6 +93,11 @@ html.phone #devBtn{left:6px;top:4px;width:22px;height:22px;background:rgba(0,0,0
 #scorePill.goldhit{animation:bump 200ms ease-out, goldHit 700ms ease-out}
 @keyframes goldHit{0%{box-shadow:0 0 0 3px #fff,0 0 0 0 rgba(255,210,58,0)}25%{box-shadow:0 0 0 3px #ffd23a,0 0 22px 8px rgba(255,210,58,.9)}100%{box-shadow:0 0 0 3px #fff,0 3px 4px rgba(0,0,0,.25)}}
 #timer.spent{opacity:.55;transition:opacity 300ms}
+#timer.draining{animation:drainPulse 260ms ease-in-out infinite}
+@keyframes drainPulse{50%{filter:brightness(1.15)}}
+#scorePill.counting{color:#b07800!important;box-shadow:0 0 0 3px #ffd23a,0 0 14px 3px rgba(255,210,58,.75)!important;transform:translateX(-50%) scale(1.08)!important;transition:transform 150ms}
+.bling{position:absolute;z-index:8;pointer-events:none;color:#ffd23a;text-shadow:0 0 6px rgba(255,210,58,.9),0 0 2px #fff;transform:translate(-50%,-50%) scale(0);animation:bling 1100ms ease-out forwards}
+@keyframes bling{0%{transform:translate(-50%,-50%) scale(0);opacity:0}25%{opacity:1;transform:translate(calc(-50% + var(--dx)*.55),calc(-50% + var(--dy)*.55)) scale(1.2)}100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.4) rotate(90deg)}}
 .bonusFly{position:absolute;z-index:8;pointer-events:none;white-space:nowrap;font:400 24px/1 "Chewy",var(--font);color:#ffd23a;
   -webkit-text-stroke:4px #3a2400;paint-order:stroke fill;text-shadow:0 0 12px rgba(255,210,58,.9)}
 @keyframes bump{50%{transform:translateX(-50%) scale(1.15)}}
@@ -1036,36 +1041,38 @@ function showResults(reason){
     p.speed=B;
     timerEl.textContent = fmtSec(remShown); timerEl.classList.remove('spent');
     if(B>0){
-      const t0 = 250, DRAIN=300, FLY=480;   // starts together with the ending effect
-      later(()=>{   // drain the timer
-        const st=performance.now();
+      // V11: after the stickers land, the timer drains to 0.0 WHILE the score counts up, then a gold bling on the score
+      const t0 = revealEnd + 250, DUR = Math.min(2400, Math.max(1400, remShown*160));   // slow, readable count-up
+      later(()=>{
+        const st=performance.now(); scorePill.classList.add('counting'); timerEl.classList.add('draining');
+        const ease=k=>1-Math.pow(1-k,2);
         const step=now=>{ if(S.phase!=='result') return;
-          const k=Math.min(1,(now-st)/DRAIN); timerEl.textContent=fmtSec(Math.round(remShown*(1-k)*10)/10);
-          if(k<1) requestAnimationFrame(step); };
-        requestAnimationFrame(step);
-      }, t0);
-      later(()=>{   // fly "+N" from the timer to the score
-        timerEl.classList.add('spent');
-        const fly=document.createElement('div'); fly.className='bonusFly'; fly.textContent='+'+B;
-        safe.appendChild(fly);
-        const cx=el=>({x:el.offsetLeft+el.offsetWidth/2, y:el.offsetTop+el.offsetHeight/2});
-        const a=cx(timerEl), b=cx(scorePill);
-        fly.style.left=a.x+'px'; fly.style.top=a.y+'px';
-        const dx=b.x-a.x, dy=b.y-a.y;
-        fly.animate([
-          {transform:'translate(-50%,-50%) scale(.6)', opacity:0},
-          {transform:'translate(-50%,-50%) scale(1.25)', opacity:1, offset:.18},
-          {transform:`translate(calc(-50% + ${dx*.5}px), calc(-50% + ${dy*.5-34}px)) scale(1.1)`, opacity:1, offset:.6},
-          {transform:`translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(.7)`, opacity:.9}
-        ], {duration:FLY, easing:'cubic-bezier(.4,0,.6,1)', fill:'forwards'}).onfinish=()=>{
-          fly.remove();
-          if(S.phase!=='result') return;
-          scorePill.textContent='Score: '+(base+B);
-          restart(scorePill,'bump'); restart(scorePill,'goldhit'); buzz([15,30,15]);
+          const k=Math.min(1,(now-st)/DUR), e=ease(k);
+          timerEl.textContent=fmtSec(Math.round(remShown*(1-e)*10)/10);
+          scorePill.textContent='Score: '+(base+Math.round(B*e));
+          if(k<1) return requestAnimationFrame(step);
+          // finish: bling
+          timerEl.classList.remove('draining');   // V11: timer stays fully opaque at 0.0s
+          scorePill.classList.remove('counting'); restart(scorePill,'goldhit');
+          scoreBling(); buzz([15,30,15]);
           setLines(`Speed bonus +${B}`);
         };
-      }, t0+DRAIN+60);
+        requestAnimationFrame(step);
+      }, t0);
     }
+  }
+}
+
+function scoreBling(){   // gold sparkles popping out around the score
+  const cx=scorePill.offsetLeft+scorePill.offsetWidth/2 - scorePill.offsetWidth/2, cy=scorePill.offsetTop+scorePill.offsetHeight/2;
+  // scorePill is centred with translateX(-50%), so its visual centre is offsetLeft
+  for(let i=0;i<14;i++){
+    const sp=document.createElement('span'); sp.className='bling'; sp.textContent=i%3?'✦':'✨';
+    const ang=(i/14)*Math.PI*2+Math.random()*.4, r=46+Math.random()*26;
+    sp.style.left=(scorePill.offsetLeft)+'px'; sp.style.top=cy+'px';
+    sp.style.setProperty('--dx',(Math.cos(ang)*r*1.4).toFixed(0)+'px'); sp.style.setProperty('--dy',(Math.sin(ang)*r*.7).toFixed(0)+'px');
+    sp.style.animationDelay=(Math.random()*120|0)+'ms'; sp.style.fontSize=(14+Math.random()*12|0)+'px';
+    safe.appendChild(sp); setTimeout(()=>sp.remove(), 1400);
   }
 }
 
