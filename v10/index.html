@@ -1317,6 +1317,8 @@ function openDev(){
   dev.hidden=false;
 }
 $('devBtn').addEventListener('click', openDev);
+// V10: settings gear is hidden for the clean submission build — add ?dev=1 to the URL to show it
+if(QS.get('dev')!=='1') $('devBtn').hidden=true;
 $('devClose').addEventListener('click', ()=>dev.hidden=true);
 $('devApply').addEventListener('click', ()=>{
   const sel=devPresets.querySelector('input:checked');
