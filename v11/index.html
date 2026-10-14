@@ -407,7 +407,7 @@ html.phone #devBtn{left:6px;top:4px;width:22px;height:22px;background:rgba(0,0,0
       <label><input type="checkbox" id="devSafe"> Show safe zone (284 × 477)</label>
       <label><input type="checkbox" id="devHit"> Show record-button hit area</label>
       <div class="row"><button id="devClose">Close</button><button id="devApply">Apply &amp; restart</button></div>
-      <p>Frame and style changes apply right away. In the Recording frame the record button pauses (frame → Paused) and tapping it again starts a new round. Ending effect follows the final score: ≥170 gold + confetti · ≥110 confetti · ≥60 stars · below → rain.</p>
+      <p>Frame and style changes apply right away. In the Recording frame the record button pauses (frame → Paused) and tapping it again starts a new round. Ending effect follows the final score: ≥150 gold + confetti · ≥110 confetti · ≥60 stars · below → rain.</p>
       <pre id="devCfg"></pre>
     </div>
   </div>
@@ -448,7 +448,7 @@ const CONFIG = {
   memErrPerPenalty: 3,    // option 'mem3' (memory errors only)
   missPenalty: 3,
   missesPerPenaltyOrig: 5,    // every N mismatches adds a penalty word to your 2027
-  fxTiers: {gold:170, confetti:110, sparkle:60},   // V11: recalibrated (no penalties, more upgrades) — gold ≈ fast clear with streaks   // V9: ending effect by FINAL score (incl. speed bonus); below sparkle → rain
+  fxTiers: {gold:150, confetti:110, sparkle:60},   // V11: gold lowered 170→150 after real playtests (careful play topped out ~164)   // V9: ending effect by FINAL score (incl. speed bonus); below sparkle → rain
   penaltyScore: 10,       // points lost per penalty word
   badPenalty: 10,         // subtracted when a bad pair is matched
   comboStep: 5,           // combo bonus: +comboStep × (combo − 1) on each chained good match
